@@ -1,0 +1,280 @@
+Terminals which are not used
+
+   ABRE_PARENTESES
+   FECHA_PARENTESES
+
+
+Grammar
+
+    0 $accept: expr $end
+
+    1 expr: sum
+    2     | or
+
+    3 sum: sum MAIS mult
+    4    | sum MENOS mult
+    5    | mult
+
+    6 mult: mult ASTERISCO num
+    7     | mult DIV num
+    8     | num
+
+    9 num: NUM
+
+   10 or: or OR and
+   11   | and
+
+   12 and: and AND bool
+   13    | bool
+
+   14 bool: BOOL
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+NUM (258) 9
+BOOL (259) 14
+MAIS (260) 3
+MENOS (261) 4
+OR (262) 10
+AND (263) 12
+ASTERISCO (264) 6
+DIV (265) 7
+ABRE_PARENTESES (266)
+FECHA_PARENTESES (267)
+
+
+Nonterminals, with rules where they appear
+
+$accept (13)
+    on left: 0
+expr (14)
+    on left: 1 2, on right: 0
+sum (15)
+    on left: 3 4 5, on right: 1 3 4
+mult (16)
+    on left: 6 7 8, on right: 3 4 5 6 7
+num (17)
+    on left: 9, on right: 6 7 8
+or (18)
+    on left: 10 11, on right: 2 10
+and (19)
+    on left: 12 13, on right: 10 11 12
+bool (20)
+    on left: 14, on right: 12 13
+
+
+state 0
+
+    0 $accept: . expr $end
+
+    NUM   shift, and go to state 1
+    BOOL  shift, and go to state 2
+
+    expr  go to state 3
+    sum   go to state 4
+    mult  go to state 5
+    num   go to state 6
+    or    go to state 7
+    and   go to state 8
+    bool  go to state 9
+
+
+state 1
+
+    9 num: NUM .
+
+    $default  reduce using rule 9 (num)
+
+
+state 2
+
+   14 bool: BOOL .
+
+    $default  reduce using rule 14 (bool)
+
+
+state 3
+
+    0 $accept: expr . $end
+
+    $end  shift, and go to state 10
+
+
+state 4
+
+    1 expr: sum .
+    3 sum: sum . MAIS mult
+    4    | sum . MENOS mult
+
+    MAIS   shift, and go to state 11
+    MENOS  shift, and go to state 12
+
+    $default  reduce using rule 1 (expr)
+
+
+state 5
+
+    5 sum: mult .
+    6 mult: mult . ASTERISCO num
+    7     | mult . DIV num
+
+    ASTERISCO  shift, and go to state 13
+    DIV        shift, and go to state 14
+
+    $default  reduce using rule 5 (sum)
+
+
+state 6
+
+    8 mult: num .
+
+    $default  reduce using rule 8 (mult)
+
+
+state 7
+
+    2 expr: or .
+   10 or: or . OR and
+
+    OR  shift, and go to state 15
+
+    $default  reduce using rule 2 (expr)
+
+
+state 8
+
+   11 or: and .
+   12 and: and . AND bool
+
+    AND  shift, and go to state 16
+
+    $default  reduce using rule 11 (or)
+
+
+state 9
+
+   13 and: bool .
+
+    $default  reduce using rule 13 (and)
+
+
+state 10
+
+    0 $accept: expr $end .
+
+    $default  accept
+
+
+state 11
+
+    3 sum: sum MAIS . mult
+
+    NUM  shift, and go to state 1
+
+    mult  go to state 17
+    num   go to state 6
+
+
+state 12
+
+    4 sum: sum MENOS . mult
+
+    NUM  shift, and go to state 1
+
+    mult  go to state 18
+    num   go to state 6
+
+
+state 13
+
+    6 mult: mult ASTERISCO . num
+
+    NUM  shift, and go to state 1
+
+    num  go to state 19
+
+
+state 14
+
+    7 mult: mult DIV . num
+
+    NUM  shift, and go to state 1
+
+    num  go to state 20
+
+
+state 15
+
+   10 or: or OR . and
+
+    BOOL  shift, and go to state 2
+
+    and   go to state 21
+    bool  go to state 9
+
+
+state 16
+
+   12 and: and AND . bool
+
+    BOOL  shift, and go to state 2
+
+    bool  go to state 22
+
+
+state 17
+
+    3 sum: sum MAIS mult .
+    6 mult: mult . ASTERISCO num
+    7     | mult . DIV num
+
+    ASTERISCO  shift, and go to state 13
+    DIV        shift, and go to state 14
+
+    $default  reduce using rule 3 (sum)
+
+
+state 18
+
+    4 sum: sum MENOS mult .
+    6 mult: mult . ASTERISCO num
+    7     | mult . DIV num
+
+    ASTERISCO  shift, and go to state 13
+    DIV        shift, and go to state 14
+
+    $default  reduce using rule 4 (sum)
+
+
+state 19
+
+    6 mult: mult ASTERISCO num .
+
+    $default  reduce using rule 6 (mult)
+
+
+state 20
+
+    7 mult: mult DIV num .
+
+    $default  reduce using rule 7 (mult)
+
+
+state 21
+
+   10 or: or OR and .
+   12 and: and . AND bool
+
+    AND  shift, and go to state 16
+
+    $default  reduce using rule 10 (or)
+
+
+state 22
+
+   12 and: and AND bool .
+
+    $default  reduce using rule 12 (and)
