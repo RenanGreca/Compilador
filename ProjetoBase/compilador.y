@@ -23,18 +23,19 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 #define empilhaAMEM(n_vars) temp_num = malloc (sizeof (int)); *temp_num = n_vars; empilha(&pilha_amem_dmem, temp_num);
 #define geraCodigoDMEM() \
 	num_vars = *(int *)desempilha(&pilha_amem_dmem); \
-		if (num_vars) {geraCodigoArgs (NULL, "DMEM %d", num_vars);}
+		if (num_vars) {printf ("DMEM %d", num_vars);}
 
 %}
 
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES 
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
-%token T_BEGIN T_END VAR IDENT ATRIBUICAO
+%token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
 
 %%
 
 programa    :{ 
-             geraCodigo (NULL, "INPP");
+             	geraCodigo (NULL, "INPP");
+		deslocamento = 0;
              }
              PROGRAM IDENT {
 	     	Simbolo a;
@@ -43,11 +44,10 @@ programa    :{
 	     	tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
 		/*printf("TABELA BEGIN\n");
 		imprime(tabelaSimbolo);
-		printf("TABELA END\n");*/
+		printf("TABELA END\n");*/ 
 	     }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
 	     PONTO {
-		geraCodigoDMEM();
 		geraCodigo (NULL, "PARA");
              }
 ;
@@ -96,12 +96,21 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
-
-comando_composto: T_BEGIN comandos T_END 
-
-comandos:    
+comando_composto: T_BEGIN comandos_ T_END
 ;
 
+comandos_ : comandos
+	  |
+; 
+
+comandos : comandos PONTO_E_VIRGULA comando
+	 | comando
+;
+
+comando : NUMERO DOIS_PONTOS
+	| comando_composto
+	| IDENT ATRIBUICAO NUMERO {}
+;
 
 %%
 

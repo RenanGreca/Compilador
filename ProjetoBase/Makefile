@@ -15,10 +15,10 @@ compilador.o : compilador.h compiladorF.c
 tabelaSimbolos.o : tabelaSimbolos.h tabelaSimbolos.c
 	gcc -c tabelaSimbolos.c -o tabelaSimbolos.o
 
-pilha.o: pilha.h pilha.o
+pilha.o: pilha.h pilha.c
 	gcc -c pilha.c -o pilha.o
 
-trataerro.o: trataerro.h trataerro.o
+trataerro.o: trataerro.h trataerro.c
 	gcc -c trataerro.c -o trataerro.o
 
 clean : 

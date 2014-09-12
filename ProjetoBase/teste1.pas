@@ -1,5 +1,6 @@
 program exemplo75 (input, output);
-var m,n,o :  integer;
+var a: integer;
 begin
+	a:=1
 end.
 

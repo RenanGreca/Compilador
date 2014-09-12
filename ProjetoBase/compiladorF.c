@@ -40,3 +40,9 @@ int imprimeErro ( char* erro ) {
   fprintf (stderr, "Erro na linha %d - %s\n", nl, erro);
   exit(-1);
 }
+
+extern char *yytext;
+void yyerror (char *s) { /* Arruma erro de compilacao do ProjetoBase */
+	fprintf (stderr, "ERR: *** %s: at or before '%s', in line: %d\n", s, yytext, nl);
+	exit(-1);
+}
