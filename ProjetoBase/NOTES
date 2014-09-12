@@ -1,0 +1,3 @@
+flex compilador.l generates:
+
+	lex.yy.c

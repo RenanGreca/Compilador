@@ -8,9 +8,22 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "compilador.h"
+#include "tabelaSimbolos.h"
+#include "pilha.h"
 
-int num_vars;
+int num_vars, *temp_num, deslocamento;
+// Instancia TABELA DE SIMBOLOS
+ApontadorSimbolo tabelaSimbolo = NULL;
+// Instancia PILHA
+PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
+
+/* Empilha numero de vars locais para posterior DMEM */
+#define empilhaAMEM(n_vars) temp_num = malloc (sizeof (int)); *temp_num = n_vars; empilha(&pilha_amem_dmem, temp_num);
+#define geraCodigoDMEM() \
+	num_vars = *(int *)desempilha(&pilha_amem_dmem); \
+		if (num_vars) {geraCodigoArgs (NULL, "DMEM %d", num_vars);}
 
 %}
 
@@ -21,18 +34,28 @@ int num_vars;
 %%
 
 programa    :{ 
-             geraCodigo (NULL, "INPP"); 
+             geraCodigo (NULL, "INPP");
              }
-             PROGRAM IDENT 
-             ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
-             bloco PONTO {
-             geraCodigo (NULL, "PARA"); 
+             PROGRAM IDENT {
+	     	Simbolo a;
+	     	a.identificador = token;
+		// Adiciona o nome do programa na tabela de simbolos
+	     	tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
+		/*printf("TABELA BEGIN\n");
+		imprime(tabelaSimbolo);
+		printf("TABELA END\n");*/
+	     }
+             ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
+	     PONTO {
+		geraCodigoDMEM();
+		geraCodigo (NULL, "PARA");
              }
 ;
 
 bloco       : 
               parte_declara_vars
-              { 
+              {
+		empilhaAMEM(deslocamento);
               }
 
               comando_composto 
