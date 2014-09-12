@@ -23,7 +23,7 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 #define empilhaAMEM(n_vars) temp_num = malloc (sizeof (int)); *temp_num = n_vars; empilha(&pilha_amem_dmem, temp_num);
 #define geraCodigoDMEM() \
 	num_vars = *(int *)desempilha(&pilha_amem_dmem); \
-		if (num_vars) {printf ("DMEM %d", num_vars);}
+		char buffer[50]; sprintf(buffer, "DMEM %d", num_vars); geraCodigo (NULL, buffer);
 
 %}
 
@@ -48,6 +48,7 @@ programa    :{
 	     }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
 	     PONTO {
+		geraCodigoDMEM();
 		geraCodigo (NULL, "PARA");
              }
 ;
