@@ -22,7 +22,7 @@ ident [a-zAZ][a-zAZ1-9]*
 
 numero [0-9]+
 
-comentario "(*".*"*)"
+comentario "(*"(.|{pulo_linha})*"*)"
 
 %%
 
@@ -98,6 +98,12 @@ end { simbolo = simb_end;
           IMPRIME(" fecha_parenteses ");
           return FECHA_PARENTESES;
  }
+
+{numero} { simbolo = simb_numero;
+		strncpy (token, yytext, TAM_TOKEN);
+		IMPRIME(" numero");
+		return NUMERO;
+	}
 
 {ident} { simbolo = simb_identificador; 
           strncpy (token, yytext, TAM_TOKEN);

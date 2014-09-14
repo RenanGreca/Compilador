@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 #include "compilador.h"
 
 
@@ -39,4 +41,10 @@ void geraCodigo (char* rot, char* comando) {
 int imprimeErro ( char* erro ) {
   fprintf (stderr, "Erro na linha %d - %s\n", nl, erro);
   exit(-1);
+}
+
+extern char *yytext;
+void yyerror (char *s) { /* Arruma erro de compilacao do ProjetoBase */
+	fprintf (stderr, "ERR: *** %s: at or before '%s', in line: %d\n", s, yytext, nl);
+	exit(-1);
 }
