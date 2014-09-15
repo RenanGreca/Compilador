@@ -22,4 +22,4 @@ trataerro.o: trataerro.h trataerro.c
 	gcc -c trataerro.c -o trataerro.o
 
 clean : 
-	rm -f compilador.tab.* lex.yy.c 
+	rm -f compilador.tab.* lex.yy.c *.o
