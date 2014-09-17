@@ -37,8 +37,8 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo) {
 }
 
 // Imprime um simbolo
-void imprimeSimbolo(Simbolo a){
-	printf("%s\n", a.identificador);
+void imprimeSimbolo(ApontadorSimbolo a){
+	printf("%p: %s -> %p\n", a, a->identificdador, a->proximo);
 }
 
 // Imprime pilha
@@ -46,7 +46,7 @@ void imprime(ApontadorSimbolo topo) {
 	if(topo == NULL){
 		return;
 	}
-	imprimeSimbolo(*topo);
+	imprimeSimbolo(topo);
 	imprime(topo->proximo);
 	return;
 }

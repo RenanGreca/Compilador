@@ -33,7 +33,7 @@ void retira(ApontadorSimbolo* topo, int index);
 ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo);
 
 // Imprime um simbolo
-void imprimeSimbolo(Simbolo a);
+void imprimeSimbolo(ApontadorSimbolo a);
 
 // Imprime pilha
 void imprime(ApontadorSimbolo topo);

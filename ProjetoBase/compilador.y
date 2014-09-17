@@ -38,13 +38,13 @@ programa    :{
 		deslocamento = 0;
              }
              PROGRAM IDENT {
-	     	Simbolo a;
-	     	a.identificador = token;
+                Simbolo a;
+                a.identificador = malloc(sizeof(token));
+	     	strcpy(a.identificador, token);
 		// Adiciona o nome do programa na tabela de simbolos
 	     	tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
-		/*printf("TABELA BEGIN\n");
+		printf("TABELA BEGIN\n");
 		imprime(tabelaSimbolo);
-		printf("TABELA END\n");*/ 
 	     }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
 	     PONTO {
@@ -89,8 +89,26 @@ tipo        : IDENT
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT 
-              { /* insere última vars na tabela de símbolos */ }
-            | IDENT { /* insere vars na tabela de símbolos */}
+                /* insere última vars na tabela de símbolos */
+              { 
+                Simbolo a;
+                a.identificador = malloc(sizeof(token));
+                strcpy(a.identificador, token);
+                /* insere vars na tabela de símbolos */
+                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
+                printf("Adicionando simbolo a tabela\n");
+                imprime(tabelaSimbolo);
+             }
+            | IDENT /* insere vars na tabela de símbolos */
+             { 
+                Simbolo a;
+                a.identificador = malloc(sizeof(token));
+                strcpy(a.identificador, token);
+                //a->identificador = token;
+                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
+                printf("Adicionando simbolo a tabela\n");
+                imprime(tabelaSimbolo);
+             }
 ;
 
 lista_idents: lista_idents VIRGULA IDENT  
