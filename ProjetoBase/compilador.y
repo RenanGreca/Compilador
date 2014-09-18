@@ -44,7 +44,8 @@ programa    :{
 		// Adiciona o nome do programa na tabela de simbolos
 	     	tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
 		printf("TABELA BEGIN\n");
-		imprime(tabelaSimbolo);
+		//imprime(tabelaSimbolo);
+                num_vars = 0;
 	     }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
 	     PONTO {
@@ -81,6 +82,12 @@ declara_var : { }
               lista_id_var DOIS_PONTOS 
               tipo 
               { /* AMEM */
+                printf("Aloca memoria %d\n", num_vars);
+                char amem[10];
+                sprintf(amem, "AMEM %d", num_vars);
+                printf("%s\n", amem);
+                geraCodigo (NULL, amem);
+                num_vars=0;
               }
               PONTO_E_VIRGULA
 ;
@@ -96,8 +103,9 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 strcpy(a.identificador, token);
                 /* insere vars na tabela de símbolos */
                 tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
-                printf("Adicionando simbolo a tabela\n");
-                imprime(tabelaSimbolo);
+                //printf("Adicionando simbolo a tabela\n");
+                //imprime(tabelaSimbolo);
+                num_vars++;
              }
             | IDENT /* insere vars na tabela de símbolos */
              { 
@@ -106,8 +114,9 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 strcpy(a.identificador, token);
                 //a->identificador = token;
                 tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
-                printf("Adicionando simbolo a tabela\n");
-                imprime(tabelaSimbolo);
+                //printf("Adicionando simbolo a tabela\n");
+                //imprime(tabelaSimbolo);
+                num_vars++;
              }
 ;
 
