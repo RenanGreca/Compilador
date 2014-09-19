@@ -32,6 +32,7 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
 %token WRITE MAIS MENOS ASTERISCO DIV AND OR
+%token WHILE
 
 %%
 
@@ -81,7 +82,8 @@ declara_vars: declara_vars declara_var
             | declara_var 
 ;
 
-declara_var : { } 
+declara_var : { num_vars=0;
+              } 
               lista_id_var DOIS_PONTOS 
               tipo 
               { /* AMEM */
@@ -90,7 +92,6 @@ declara_var : { }
                 sprintf(amem, "AMEM %d", num_vars);
                 printf("%s\n", amem);
                 geraCodigo (NULL, amem);
-                num_vars=0;
               }
               PONTO_E_VIRGULA
 ;
@@ -109,7 +110,7 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 /* insere vars na tabela de símbolos */
                 tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
                 //printf("Adicionando simbolo a tabela\n");
-                imprime(tabelaSimbolo);
+                //imprime(tabelaSimbolo);
                 num_vars++;
              }
             | IDENT /* insere vars na tabela de símbolos */
@@ -146,7 +147,15 @@ comando : NUMERO DOIS_PONTOS
         | comando_composto
         | atribuicao
         | write
+        | while
+        | read
         |
+;
+
+while   : WHILE ABRE_PARENTESES
+          expr
+          FECHA_PARENTESES
+          comando_composto
 ;
 
 write   : WRITE ABRE_PARENTESES IDENT {
@@ -156,6 +165,16 @@ write   : WRITE ABRE_PARENTESES IDENT {
                 geraCodigo(NULL, crvl);
                 geraCodigo(NULL, "IMPR");
           } FECHA_PARENTESES
+;
+
+read   : WRITE ABRE_PARENTESES IDENT {
+                ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                char armz[10];
+                sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+                geraCodigo(NULL, "LEIT");
+                geraCodigo(NULL, armz);
+          } FECHA_PARENTESES
+;
 
 atribuicao: IDENT 
                 {

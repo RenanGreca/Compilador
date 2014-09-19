@@ -61,6 +61,11 @@ write {simbolo = simb_write;
           IMPRIME("write ");
           return WRITE;}
 
+while {simbolo = simb_while;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("while ");
+          return WHILE;}
+
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" atribuicao  ");
