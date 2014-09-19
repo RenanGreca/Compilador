@@ -56,6 +56,11 @@ end { simbolo = simb_end;
           return T_END;
  }
 
+write {simbolo = simb_write;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("write ");
+          return WRITE;}
+
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" atribuicao  ");
@@ -111,6 +116,13 @@ end { simbolo = simb_end;
           return IDENT;
         }
 
+\+    { IMPRIME(" mais  ");
+          return MAIS; }
+\-    { return MENOS; }
+\*    { return ASTERISCO;  }
+\/    { return DIV;  }
+and   { return AND; }
+or    { return OR; }
 
 %%
 

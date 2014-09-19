@@ -13,7 +13,8 @@
 #include "tabelaSimbolos.h"
 #include "pilha.h"
 
-int num_vars, *temp_num, deslocamento;
+int num_vars, *temp_num, deslocamento, nivel;
+char temp[10];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
@@ -22,42 +23,44 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 /* Empilha numero de vars locais para posterior DMEM */
 #define empilhaAMEM(n_vars) temp_num = malloc (sizeof (int)); *temp_num = n_vars; empilha(&pilha_amem_dmem, temp_num);
 #define geraCodigoDMEM() \
-	num_vars = *(int *)desempilha(&pilha_amem_dmem); \
-		char buffer[50]; sprintf(buffer, "DMEM %d", num_vars); geraCodigo (NULL, buffer);
+        num_vars = *(int *)desempilha(&pilha_amem_dmem); \
+                char buffer[50]; sprintf(buffer, "DMEM %d", num_vars); geraCodigo (NULL, buffer);
 
 %}
 
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES 
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
+%token WRITE MAIS MENOS ASTERISCO DIV AND OR
 
 %%
 
 programa    :{ 
-             	geraCodigo (NULL, "INPP");
-		deslocamento = 0;
+                geraCodigo (NULL, "INPP");
+                deslocamento = 0;
+                nivel = 0;
              }
              PROGRAM IDENT {
                 Simbolo a;
                 a.identificador = malloc(sizeof(token));
-	     	strcpy(a.identificador, token);
-		// Adiciona o nome do programa na tabela de simbolos
-	     	tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
-		printf("TABELA BEGIN\n");
-		//imprime(tabelaSimbolo);
+                strcpy(a.identificador, token);
+                // Adiciona o nome do programa na tabela de simbolos
+                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
+                printf("TABELA BEGIN\n");
+                //imprime(tabelaSimbolo);
                 num_vars = 0;
-	     }
+             }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
-	     PONTO {
-		geraCodigoDMEM();
-		geraCodigo (NULL, "PARA");
+             PONTO {
+                geraCodigoDMEM();
+                geraCodigo (NULL, "PARA");
              }
 ;
 
 bloco       : 
               parte_declara_vars
               {
-		empilhaAMEM(deslocamento);
+                empilhaAMEM(deslocamento);
               }
 
               comando_composto 
@@ -101,10 +104,12 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 Simbolo a;
                 a.identificador = malloc(sizeof(token));
                 strcpy(a.identificador, token);
+                a.deslocamento = deslocamento++;
+                a.nivel = nivel;
                 /* insere vars na tabela de símbolos */
                 tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
                 //printf("Adicionando simbolo a tabela\n");
-                //imprime(tabelaSimbolo);
+                imprime(tabelaSimbolo);
                 num_vars++;
              }
             | IDENT /* insere vars na tabela de símbolos */
@@ -112,6 +117,8 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 Simbolo a;
                 a.identificador = malloc(sizeof(token));
                 strcpy(a.identificador, token);
+                a.deslocamento = deslocamento++;
+                a.nivel = nivel;
                 //a->identificador = token;
                 tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
                 //printf("Adicionando simbolo a tabela\n");
@@ -128,17 +135,94 @@ comando_composto: T_BEGIN comandos_ T_END
 ;
 
 comandos_ : comandos
-	  |
+          |
 ; 
 
 comandos : comandos PONTO_E_VIRGULA comando
-	 | comando
+         | comando
 ;
 
 comando : NUMERO DOIS_PONTOS
-	| comando_composto
-	| IDENT ATRIBUICAO NUMERO {}
+        | comando_composto
+        | atribuicao
+        | write
+        |
 ;
+
+write   : WRITE ABRE_PARENTESES IDENT {
+                ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                char crvl[10];
+                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                geraCodigo(NULL, crvl);
+                geraCodigo(NULL, "IMPR");
+          } FECHA_PARENTESES
+
+atribuicao: IDENT 
+                {
+                        strcpy(temp, token);
+                } ATRIBUICAO expr {
+                        //ARMZ
+                        char armz[10];
+                        ApontadorSimbolo a = busca(temp, tabelaSimbolo);
+                        sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+                        geraCodigo(NULL, armz);
+                }
+;
+
+expr       : sum //|
+             //or
+;
+
+sum        : sum MAIS mult 
+                {
+                        geraCodigo(NULL, "SOMA");
+                } |
+             sum MENOS mult
+                {
+                        geraCodigo(NULL, "SUBT");
+                }  | 
+             mult
+;
+
+mult       : mult ASTERISCO val
+                {
+                        geraCodigo(NULL, "MULT");
+                }  | 
+             mult DIV val 
+                {
+                        geraCodigo(NULL, "DIVI");
+                } | 
+             val
+;
+/*
+or         : or OR and { printf ("or"); } | 
+             and
+;
+
+and        : and AND bool { printf ("and"); } |
+             bool
+;*/
+
+val        : ident | numero
+;
+
+ident      : IDENT
+                {
+                        printf("ATRIBUICAO: %s\n", token);
+                        imprime(tabelaSimbolo);
+                        ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                        char crvl[10];
+                        sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                        printf("%s\n", crvl);
+                        geraCodigo(NULL, crvl);
+                }
+;
+numero     : NUMERO {
+                        char crct[10];
+                        sprintf(crct, "CRCT %s", token);
+                        printf("%s\n", crct);
+                        geraCodigo(NULL, crct);
+                }
 
 %%
 
