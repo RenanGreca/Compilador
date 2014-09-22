@@ -4,12 +4,15 @@
 #include "tabelaSimbolos.h"
 
 // Insere atributo na tabela
-ApontadorSimbolo insere(ApontadorSimbolo simbolo, ApontadorSimbolo topo, int categoria) {
+ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
+	ApontadorSimbolo tmp;
 
-	simbolo->categoria = categoria;
+	tmp = malloc(sizeof(Simbolo));
+	tmp->identificador = simbolo.identificador;
+	tmp->categoria = categoria;
 
-	simbolo->proximo = topo;
-	topo = simbolo;
+	tmp->proximo = topo;
+	topo = tmp;
 
 	return topo;
 }

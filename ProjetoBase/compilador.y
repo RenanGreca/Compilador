@@ -46,7 +46,7 @@ programa    :{
                 a.identificador = malloc(sizeof(token));
                 strcpy(a.identificador, token);
                 // Adiciona o nome do programa na tabela de simbolos
-                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_Procedimento);
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
                 printf("TABELA BEGIN\n");
                 //imprime(tabelaSimbolo);
                 num_vars = 0;
@@ -108,7 +108,7 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 a.deslocamento = deslocamento++;
                 a.nivel = nivel;
                 /* insere vars na tabela de símbolos */
-                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_variavelSimples);
                 //printf("Adicionando simbolo a tabela\n");
                 //imprime(tabelaSimbolo);
                 num_vars++;
@@ -121,7 +121,7 @@ lista_id_var: lista_id_var VIRGULA IDENT
                 a.deslocamento = deslocamento++;
                 a.nivel = nivel;
                 //a->identificador = token;
-                tabelaSimbolo = insere(&a, tabelaSimbolo, OPT_variavelSimples);
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_variavelSimples);
                 //printf("Adicionando simbolo a tabela\n");
                 //imprime(tabelaSimbolo);
                 num_vars++;
@@ -182,6 +182,7 @@ atribuicao: IDENT
                 } ATRIBUICAO expr {
                         //ARMZ
                         char armz[10];
+			printf("tmp: %s\n", temp);
                         ApontadorSimbolo a = busca(temp, tabelaSimbolo);
                         sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
                         geraCodigo(NULL, armz);

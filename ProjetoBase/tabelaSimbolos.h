@@ -24,7 +24,7 @@ typedef struct Simbolo {
 }Simbolo;
 
 // Insere atributo na tabela
-ApontadorSimbolo insere(ApontadorSimbolo simbolo, ApontadorSimbolo topo, int categoria);
+ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria);
 
 // Retira simbolo da tabela
 void retira(ApontadorSimbolo* topo, int index);
