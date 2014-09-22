@@ -32,7 +32,7 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
 %token WRITE MAIS MENOS ASTERISCO DIV AND OR
-%token WHILE
+%token WHILE READ
 
 %%
 
@@ -167,7 +167,7 @@ write   : WRITE ABRE_PARENTESES IDENT {
           } FECHA_PARENTESES
 ;
 
-read   : WRITE ABRE_PARENTESES IDENT {
+read   : READ ABRE_PARENTESES IDENT {
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
                 char armz[10];
                 sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);

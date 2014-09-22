@@ -60,6 +60,10 @@ write {simbolo = simb_write;
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("write ");
           return WRITE;}
+read {simbolo = simb_write;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("read ");
+          return READ;}
 
 while {simbolo = simb_while;
           strncpy (token, yytext, TAM_TOKEN);
