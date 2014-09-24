@@ -9,6 +9,8 @@ ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
 
 	tmp = malloc(sizeof(Simbolo));
 	tmp->identificador = simbolo.identificador;
+	tmp->nivel = simbolo.nivel;
+	tmp->deslocamento = simbolo.deslocamento;
 	tmp->categoria = categoria;
 
 	tmp->proximo = topo;
@@ -41,16 +43,45 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo) {
 
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a){
-	printf("%p: %s -> %p\n", a, a->identificador, a->proximo);
+	printf("                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
+	if(a->tipo == VARTIPO_INT){
+		printf("%14s", "Int |");
+	} else if(a->tipo == VARTIPO_INT_P){
+		printf("%14s", "Int* |");
+	} else if(a->tipo == VARTIPO_CHAR){
+		printf("%14s", "Char |");
+	} else if(a->tipo == VARTIPO_CHAR_P){
+		printf("%14s", "Char* |");
+	}
+	if(a->categoria == OPT_variavelSimples){
+		printf("%18s", "VARIAVEL SIMPLES ");
+	} else if(a->categoria == OPT_ParametroFormal){
+		printf("%18s", "PARAMETRO FORMAL ");
+	} else if(a->categoria == OPT_Procedimento){
+		printf("%18s", "PROCEDIMENTO ");
+	}	
+
+	printf("   |\n");
 }
 
 // Imprime pilha
-void imprime(ApontadorSimbolo topo) {
+void imprimeTabela(ApontadorSimbolo topo) {
 	if(topo == NULL){
 		return;
 	}
 	imprimeSimbolo(topo);
-	imprime(topo->proximo);
+	imprimeTabela(topo->proximo);
+	
+	return;
+}
+
+void imprime(ApontadorSimbolo topo){
+	printf("-------------- TABELA -----------------------------------------------------------------------------------#\n");
+	printf("                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA         #\n");
+	printf("---------------------------------------------------------------------------------------------------------#\n");
+	imprimeTabela(topo);
+	printf("-------------- FINISH -----------------------------------------------------------------------------------#\n");
+
 	return;
 }
 

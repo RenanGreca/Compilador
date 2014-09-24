@@ -3,6 +3,11 @@
 #define 	OPT_ParametroFormal 	1
 #define 	OPT_Procedimento 	2
 
+#define		VARTIPO_INT 		0
+#define		VARTIPO_INT_P		1
+#define		VARTIPO_CHAR		2
+#define		VARTIPO_CHAR_P		3
+
 typedef struct Simbolo* ApontadorSimbolo;
 
 typedef struct Simbolo {
@@ -34,6 +39,8 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo);
 
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a);
+
+void imprimeTabela(ApontadorSimbolo topo);
 
 // Imprime pilha
 void imprime(ApontadorSimbolo topo);

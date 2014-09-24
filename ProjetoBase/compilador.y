@@ -13,7 +13,8 @@
 #include "tabelaSimbolos.h"
 #include "pilha.h"
 
-int num_vars, *temp_num, deslocamento, nivel;
+int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
+
 char temp[10];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
@@ -25,6 +26,16 @@ PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
 #define geraCodigoDMEM() \
         num_vars = *(int *)desempilha(&pilha_amem_dmem); \
                 char buffer[50]; sprintf(buffer, "DMEM %d", num_vars); geraCodigo (NULL, buffer);
+
+int proxRotulo(){
+	return rotulo++;
+}
+
+void imprimeRotulo(int this_rotulo){
+	char s_rotulo[10];
+	sprintf(s_rotulo, "R%d", this_rotulo);
+	geraCodigo (s_rotulo, "NADA");
+}
 
 %}
 
@@ -44,10 +55,11 @@ programa    :{
              PROGRAM IDENT {
                 Simbolo a;
                 a.identificador = malloc(sizeof(token));
+		a.nivel = nivel;
+		a.deslocamento = deslocamento++;
                 strcpy(a.identificador, token);
                 // Adiciona o nome do programa na tabela de simbolos
                 tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
-                printf("TABELA BEGIN\n");
                 //imprime(tabelaSimbolo);
                 num_vars = 0;
              }
@@ -92,6 +104,7 @@ declara_var : { num_vars=0;
                 sprintf(amem, "AMEM %d", num_vars);
                 printf("%s\n", amem);
                 geraCodigo (NULL, amem);
+		imprimeRotulo(proxRotulo());
               }
               PONTO_E_VIRGULA
 ;
@@ -132,7 +145,7 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
-comando_composto: T_BEGIN comandos_ T_END
+comando_composto: T_BEGIN comandos_ T_END { imprime(tabelaSimbolo); }
 ;
 
 comandos_ : comandos
@@ -164,6 +177,7 @@ write   : WRITE ABRE_PARENTESES IDENT {
                 sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
                 geraCodigo(NULL, crvl);
                 geraCodigo(NULL, "IMPR");
+imprimeRotulo(proxRotulo());
           } FECHA_PARENTESES
 ;
 
@@ -229,7 +243,6 @@ val        : ident | numero
 ident      : IDENT
                 {
                         printf("ATRIBUICAO: %s\n", token);
-                        imprime(tabelaSimbolo);
                         ApontadorSimbolo a = busca(token, tabelaSimbolo);
                         char crvl[10];
                         sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
