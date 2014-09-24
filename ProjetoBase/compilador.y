@@ -15,7 +15,7 @@
 
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
 
-char temp[10];
+char temp[10], erro[100];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
@@ -35,6 +35,10 @@ void imprimeRotulo(int this_rotulo){
 	char s_rotulo[10];
 	sprintf(s_rotulo, "R%d", this_rotulo);
 	geraCodigo (s_rotulo, "NADA");
+}
+
+void Erro(char* s) {
+	printf("Erro de compilacao: %s\n", s);
 }
 
 %}
@@ -196,10 +200,15 @@ atribuicao: IDENT
                 } ATRIBUICAO expr {
                         //ARMZ
                         char armz[10];
-			printf("tmp: %s\n", temp);
                         ApontadorSimbolo a = busca(temp, tabelaSimbolo);
-                        sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
-                        geraCodigo(NULL, armz);
+			if(a != NULL) {
+                        	sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+                        	geraCodigo(NULL, armz);
+			} else {
+				sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
+				Erro(erro);
+				return;
+			}
                 }
 ;
 

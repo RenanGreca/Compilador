@@ -39,6 +39,8 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo) {
 		topo = topo->proximo;
 
 	}
+
+	return NULL;
 }
 
 // Imprime um simbolo
