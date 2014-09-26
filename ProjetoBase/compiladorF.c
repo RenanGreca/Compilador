@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include "compilador.h"
+#include "compiladorF.h"
 
 
 /* -------------------------------------------------------------------

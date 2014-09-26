@@ -9,7 +9,7 @@ begin
         f3:=f2+f1;
         f1:=f2;
         f2:=f3;
-        f:=k+1;
+        f1:=k+1;
     end;
     write(n, k);
 end.

@@ -113,6 +113,48 @@ while {simbolo = simb_while;
           return FECHA_PARENTESES;
  }
 
+\=  {
+      simbolo = simb_igual;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" igual ");
+      return IGUAL;
+     }
+
+\<>  {
+      simbolo = simb_diferente;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" diferente ");
+      return DIFERENTE;
+     }
+
+\>  {
+      simbolo = simb_maior;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" maior ");
+      return MAIOR;
+     }
+
+\<  {
+      simbolo = simb_menor;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" menor ");
+      return MENOR;
+     }
+
+\>=  {
+      simbolo = simb_maior_igual;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" maior ou igual ");
+      return MAIOR_IGUAL;
+     }
+
+\<=  {
+      simbolo = simb_menor_igual;
+      strncpy (token, yytext, TAM_TOKEN);
+      IMPRIME(" menor ou igual ");
+      return MENOR_IGUAL;
+     }
+
 {numero} { simbolo = simb_numero;
 		strncpy (token, yytext, TAM_TOKEN);
 		IMPRIME(" numero");

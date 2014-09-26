@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "compilador.h"
+#include "compiladorF.h"
 #include "tabelaSimbolos.h"
 #include "pilha.h"
 
@@ -47,7 +48,8 @@ void Erro(char* s) {
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
 %token WRITE MAIS MENOS ASTERISCO DIV AND OR
-%token WHILE READ
+%token WHILE READ IGUAL DIFERENTE MAIOR MENOR
+%token MENOR_IGUAL MAIOR_IGUAL
 
 %%
 
@@ -169,21 +171,31 @@ comando : NUMERO DOIS_PONTOS
         |
 ;
 
-while   : WHILE ABRE_PARENTESES
-          expr
+while   : {
+                imprimeRotulo(rotulo);
+          } WHILE ABRE_PARENTESES
+          boolexpr
           FECHA_PARENTESES
           comando_composto
 ;
 
-write   : WRITE ABRE_PARENTESES IDENT {
-                ApontadorSimbolo a = busca(token, tabelaSimbolo);
-                char crvl[10];
-                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                geraCodigo(NULL, crvl);
-                geraCodigo(NULL, "IMPR");
-imprimeRotulo(proxRotulo());
-          } FECHA_PARENTESES
+write   : WRITE {
+                printf("Imprimindo\n");
+        } ABRE_PARENTESES lista_vals FECHA_PARENTESES
 ;
+
+lista_vals:     numero {
+                        geraCodigo(NULL, "IMPR")
+                } VIRGULA lista_vals |
+                ident {
+                        geraCodigo(NULL, "IMPR")
+                } VIRGULA lista_vals |
+                numero {
+                        geraCodigo(NULL, "IMPR")
+                } |
+                ident {
+                        geraCodigo(NULL, "IMPR")
+                }
 
 read   : READ ABRE_PARENTESES IDENT {
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
@@ -196,6 +208,7 @@ read   : READ ABRE_PARENTESES IDENT {
 
 atribuicao: IDENT 
                 {
+                        printf("ATRIBUICAO: %s\n", token);
                         strcpy(temp, token);
                 } ATRIBUICAO expr {
                         //ARMZ
@@ -207,35 +220,52 @@ atribuicao: IDENT
 			} else {
 				sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
 				Erro(erro);
-				return;
 			}
                 }
 ;
 
-expr       : sum //|
+/*expr       :    ABRE_PARENTESES expr FECHA_PARENTESES |
+                sum //|
              //or
+;*/
+
+boolexpr   :    expr | 
+                expr IGUAL expr |
+                expr DIFERENTE expr | 
+                expr MENOR expr | 
+                expr MAIOR expr | 
+                expr MENOR_IGUAL expr | 
+                expr MAIOR_IGUAL expr
 ;
 
-sum        : sum MAIS mult 
+expr       :    expr MAIS termo 
                 {
                         geraCodigo(NULL, "SOMA");
                 } |
-             sum MENOS mult
+                expr MENOS termo
                 {
                         geraCodigo(NULL, "SUBT");
                 }  | 
-             mult
+                expr OR termo
+                {
+                        geraCodigo(NULL, "DISJ")
+                } |
+                termo
 ;
 
-mult       : mult ASTERISCO val
+termo         : termo ASTERISCO val
                 {
                         geraCodigo(NULL, "MULT");
                 }  | 
-             mult DIV val 
+                termo DIV val 
                 {
                         geraCodigo(NULL, "DIVI");
                 } | 
-             val
+                termo AND val
+                {
+                        geraCodigo(NULL, "CONJ")
+                } |
+                val
 ;
 /*
 or         : or OR and { printf ("or"); } | 
@@ -251,24 +281,21 @@ val        : ident | numero
 
 ident      : IDENT
                 {
-                        printf("ATRIBUICAO: %s\n", token);
                         ApontadorSimbolo a = busca(token, tabelaSimbolo);
                         char crvl[10];
                         sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                        printf("%s\n", crvl);
                         geraCodigo(NULL, crvl);
                 }
 ;
 numero     : NUMERO {
                         char crct[10];
                         sprintf(crct, "CRCT %s", token);
-                        printf("%s\n", crct);
                         geraCodigo(NULL, crct);
                 }
 
 %%
 
-main (int argc, char** argv) {
+int main (int argc, char** argv) {
    FILE* fp;
    extern FILE* yyin;
 
