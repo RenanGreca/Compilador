@@ -3,7 +3,7 @@ var a, b: integer;
 begin
 	a:=1;
     b:=3;
-    a:=a+b;
+    a:=a*(a+b);
     write(a);
 end.
 

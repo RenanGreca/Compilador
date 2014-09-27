@@ -316,7 +316,8 @@ and        : and AND bool { printf ("and"); } |
              bool
 ;*/
 
-val        : ident | numero
+val        :    ABRE_PARENTESES expr FECHA_PARENTESES |
+                ident | numero
 ;
 
 ident      : IDENT
