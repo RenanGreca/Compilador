@@ -16,7 +16,7 @@
 
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
 
-char temp[10], erro[100];
+char temp[10], erro[100], s_rotulo[10];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
@@ -32,10 +32,19 @@ int proxRotulo(){
 	return rotulo++;
 }
 
-void imprimeRotulo(int this_rotulo){
-	char s_rotulo[10];
-	sprintf(s_rotulo, "R%d", this_rotulo);
-	geraCodigo (s_rotulo, "NADA");
+int prevRotulo(){
+        return --rotulo;
+}
+
+void imprimeRotulo(int this_rotulo, char* s_rotulo){
+	//char s_rotulo[10];
+        if (this_rotulo < 10) {
+                sprintf(s_rotulo, "R0%d", this_rotulo);
+        } else {
+                sprintf(s_rotulo, "R%d", this_rotulo);
+        }
+	//return s_rotulo;
+        //geraCodigo (s_rotulo, "NADA");
 }
 
 void Erro(char* s) {
@@ -79,6 +88,9 @@ programa    :{
 bloco       : 
               parte_declara_vars
               {
+                //imprimeRotulo(proxRotulo());
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
                 empilhaAMEM(deslocamento);
               }
 
@@ -108,9 +120,8 @@ declara_var : { num_vars=0;
                 printf("Aloca memoria %d\n", num_vars);
                 char amem[10];
                 sprintf(amem, "AMEM %d", num_vars);
-                printf("%s\n", amem);
+                //printf("%s\n", amem);
                 geraCodigo (NULL, amem);
-		imprimeRotulo(proxRotulo());
               }
               PONTO_E_VIRGULA
 ;
@@ -172,15 +183,32 @@ comando : NUMERO DOIS_PONTOS
 ;
 
 while   : {
-                imprimeRotulo(rotulo);
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+                //imprimeRotulo(proxRotulo());
           } WHILE ABRE_PARENTESES
           boolexpr
           FECHA_PARENTESES
+          {
+                char dsvf[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvf, "DSVF %s", s_rotulo);
+                geraCodigo(NULL, dsvf);
+          }
           comando_composto
+          {
+                char temp[10];
+                imprimeRotulo(prevRotulo(), temp);
+                imprimeRotulo(prevRotulo(), s_rotulo);
+                char dsvs[10];
+                sprintf(dsvs, "DSVS %s", s_rotulo); 
+                geraCodigo(NULL, dsvs); // rotulo de volta ao loop
+                geraCodigo(temp, "NADA"); // rotulo de saida do loop
+          }
 ;
 
 write   : WRITE {
-                printf("Imprimindo\n");
+                //printf("Imprimindo\n");
         } ABRE_PARENTESES lista_vals FECHA_PARENTESES
 ;
 
@@ -230,12 +258,24 @@ atribuicao: IDENT
 ;*/
 
 boolexpr   :    expr | 
-                expr IGUAL expr |
-                expr DIFERENTE expr | 
-                expr MENOR expr | 
-                expr MAIOR expr | 
-                expr MENOR_IGUAL expr | 
-                expr MAIOR_IGUAL expr
+                expr IGUAL expr {
+                                geraCodigo(NULL, "CMIG");
+                        } |
+                expr DIFERENTE expr {
+                                geraCodigo(NULL, "CMDG");
+                        } | 
+                expr MENOR expr {
+                                geraCodigo(NULL, "CMME");
+                        } | 
+                expr MAIOR expr {
+                                geraCodigo(NULL, "CMMA");
+                        } | 
+                expr MENOR_IGUAL expr {
+                                geraCodigo(NULL, "CMEG");
+                        } | 
+                expr MAIOR_IGUAL expr {
+                                geraCodigo(NULL, "CMAG");
+                        }
 ;
 
 expr       :    expr MAIS termo 
