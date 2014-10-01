@@ -53,6 +53,21 @@ void Erro(char* s) {
 	printf("Erro de compilacao: %s\n", s);
 }
 
+int verificaTipos(char *op) {
+	int *a, *b;
+	if(_DEBUG){ printf("..............................[Desempilhando (expr: %s)]...", op); }
+	a = desempilha(&pilha_tipos);
+	if(_DEBUG){ printf("%d...", *a); }
+	b = desempilha(&pilha_tipos);
+	if(_DEBUG){ printf("%d...\n", *b); }	
+	if(*a != *b){
+		printf("%s com tipos diferentes!\n", op);
+		return 0;
+	}
+	empilhaTipo(&pilha_tipos, *a);
+	return 1;
+}
+
 %}
 
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES 
@@ -61,6 +76,7 @@ void Erro(char* s) {
 %token WRITE MAIS MENOS ASTERISCO DIV AND OR
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
+%token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
 
 %%
 
@@ -122,17 +138,6 @@ declara_var : { num_vars=0;
               lista_id_var DOIS_PONTOS 
               tipo 
               { /* AMEM */
-		int tipo;
-		if(!strcmp(token, "integer")){
-			tipo = 0;
-		} else if(!strcmp(token, "char")){
-			tipo = 1;
-		} else if(!strcmp(token, "char")){
-			tipo = 2;
-		} else {
-			tipo = 0;
-		}
-		setaTipo(tabelaSimbolo, num_vars, tipo);
                 printf("Aloca memoria %d\n", num_vars);
                 char amem[10];
                 sprintf(amem, "AMEM %d", num_vars);
@@ -142,7 +147,18 @@ declara_var : { num_vars=0;
               PONTO_E_VIRGULA
 ;
 
-tipo        : IDENT
+tipo        : 	INTEGER {
+			setaTipo(tabelaSimbolo, num_vars, VARTIPO_INT);
+		} | 
+		CHAR {
+			setaTipo(tabelaSimbolo, num_vars, VARTIPO_CHAR);
+		} | 
+		STRING {
+			setaTipo(tabelaSimbolo, num_vars, VARTIPO_STRING);
+		} | 
+		BOOLEAN {
+			setaTipo(tabelaSimbolo, num_vars, VARTIPO_BOOLEAN);
+		}
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT 
@@ -195,8 +211,55 @@ comando : NUMERO DOIS_PONTOS
         | write
         | while
         | read
+	| if
         |
 ;
+
+if	: IF ABRE_PARENTESES
+          boolexpr
+          FECHA_PARENTESES {
+                char dsvf[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvf, "DSVF %s", s_rotulo);
+                geraCodigo(NULL, dsvf);
+          } THEN
+          comando_composto {
+		imprimeRotulo(prevRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+	  } |
+	  IF ABRE_PARENTESES
+          boolexpr
+          FECHA_PARENTESES {
+                char dsvf[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvf, "DSVF %s", s_rotulo);
+                geraCodigo(NULL, dsvf);
+          } THEN
+          comando_composto
+	  {	char dsvs[10];
+		imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvs, "DSVS %s", s_rotulo);
+                geraCodigo(NULL, dsvs);
+		}
+	  ELSE
+	  {
+		imprimeRotulo(prevRotulo(), temp);
+		imprimeRotulo(prevRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+	  }
+	  comando_composto
+	  {
+                geraCodigo(temp, "NADA");
+	  }
+;
+
+/*if	: IF ABRE_PARENTESES boolexpr FECHA_PARENTESES 
+          comando_composto |
+	  IF ABRE_PARENTESES boolexpr FECHA_PARENTESES 
+          comando_composto
+	  ELSE
+	  comando_composto
+;*/
 
 while   : {
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -243,10 +306,16 @@ lista_vals:     numero {
 
 read   : READ ABRE_PARENTESES IDENT {
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
-                char armz[10];
-                sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
-                geraCodigo(NULL, "LEIT");
-                geraCodigo(NULL, armz);
+		if(a != NULL) {
+		        char armz[10];
+		        sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+		        geraCodigo(NULL, "LEIT");
+		        geraCodigo(NULL, armz);
+		} else {
+			sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
+			Erro(erro);
+			return;
+		}
           } FECHA_PARENTESES
 ;
 
@@ -275,6 +344,7 @@ atribuicao: IDENT
 			} else {
 				sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
 				Erro(erro);
+				return;
 			}
                 }
 ;
@@ -286,159 +356,100 @@ atribuicao: IDENT
 
 boolexpr   :    expr | 
                 expr IGUAL expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: =)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("IGUAL com tipos diferentes!\n");
-					return;
+				if (verificaTipos("IGUAL")) {
+                                	geraCodigo(NULL, "CMIG");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMIG");
                         } |
                 expr DIFERENTE expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: !=)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("DIFERENTE com tipos diferentes!\n");
-					return;
+				if (verificaTipos("DIFERENTE")) {
+                                	geraCodigo(NULL, "CMDG");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMDG");
                         } | 
                 expr MENOR expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: <)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("MENOR com tipos diferentes!\n");
-					return;
+				if (verificaTipos("MENOR")) {
+                                	geraCodigo(NULL, "CMME");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMME");
                         } | 
                 expr MAIOR expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: >)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("MAIOR com tipos diferentes!\n");
-					return;
+				if (verificaTipos("MAIOR")) {
+                                	geraCodigo(NULL, "CMMA");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMMA");
                         } | 
                 expr MENOR_IGUAL expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: <=)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("MENOR_IGUAL com tipos diferentes!\n");
-					return;
+				if (verificaTipos("MENOR_IGUAL")) {
+                                	geraCodigo(NULL, "CMEG");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMEG");
                         } | 
                 expr MAIOR_IGUAL expr {
-				int *a, *b;
-				if(_DEBUG){ printf("..............................[Desempilhando (expr: >=)]..."); }
-				a = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...", *a); }
-				b = desempilha(&pilha_tipos);
-				if(_DEBUG){ printf("%d...\n", *b); }	
-				if(*a != *b){
-					printf("MAIOR_IGUAL com tipos diferentes!\n");
-					return;
+				if (verificaTipos("MAIOR_IGUAL")) {
+                                	geraCodigo(NULL, "CMAG");
 				} else {
-					empilhaTipo(&pilha_tipos, *a);
+					return;				
 				}
-                                geraCodigo(NULL, "CMAG");
                         }
 ;
 
 expr       :    expr MAIS termo 
                 {
-			int *a, *b;
-			if(_DEBUG){ printf("..............................[Desempilhando (expr: +)]..."); }
-			a = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...", *a); }
-			b = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...\n", *b); }	
-			if(*a != *b){
-				printf("SOMA com tipos diferentes!\n");
-				return;
+			if (verificaTipos("ADICAO")) {
+                        	geraCodigo(NULL, "SOMA");
 			} else {
-				empilhaTipo(&pilha_tipos, *a);
+				return;				
 			}
-                        geraCodigo(NULL, "SOMA");
                 } |
                 expr MENOS termo
                 {
-			int *a, *b;
-			if(_DEBUG){ printf("..............................[Desempilhando (expr: -)]..."); }
-			a = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...", *a); }
-			b = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...\n", *b); }	
-			if(*a != *b){
-				printf("DIFERENCA com tipos diferentes!\n");
-				return;
+			if (verificaTipos("SUBTRACAO")) {
+                        	geraCodigo(NULL, "SUBT");
 			} else {
-				empilhaTipo(&pilha_tipos, *a);
+				return;				
 			}
-                        geraCodigo(NULL, "SUBT");
+
                 }  | 
                 expr OR termo
                 {
-			int *a, *b;
-			if(_DEBUG){ printf("..............................[Desempilhando (expr: OR)]..."); }
-			a = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...", *a); }
-			b = desempilha(&pilha_tipos);
-			if(_DEBUG){ printf("%d...\n", *b); }	
-			if(*a != *b){
-				printf("OR com tipos diferentes!\n");
-				return;
+			if (verificaTipos("OR")) {
+                        	geraCodigo(NULL, "DISJ");
 			} else {
-				empilhaTipo(&pilha_tipos, *a);
+				return;				
 			}
-                        geraCodigo(NULL, "DISJ");
                 } |
                 termo
 ;
 
 termo         : termo ASTERISCO val
                 {
-                        geraCodigo(NULL, "MULT");
+			if (verificaTipos("MULTIPLICACAO")) {
+                        	geraCodigo(NULL, "MULT");
+			} else {
+				return;				
+			}
                 }  | 
                 termo DIV val 
                 {
-                        geraCodigo(NULL, "DIVI");
+			if (verificaTipos("DIVISAO")) {
+                        	geraCodigo(NULL, "DIVI");
+			} else {
+				return;				
+			}
                 } | 
                 termo AND val
                 {
-                        geraCodigo(NULL, "CONJ");
+			if (verificaTipos("AND")) {
+                        	geraCodigo(NULL, "CONJ");
+			} else {
+				return;				
+			}
                 } |
                 val
 ;

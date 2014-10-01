@@ -64,6 +64,8 @@ void imprimeSimbolo(ApontadorSimbolo a){
 		printf("%14s", "Char |");
 	} else if(a->tipo == VARTIPO_STRING){
 		printf("%14s", "String |");
+	} else if(a->tipo == VARTIPO_BOOLEAN){
+		printf("%14s", "Boolean |");
 	}
 	if(a->categoria == OPT_variavelSimples){
 		printf("%18s", "VARIAVEL SIMPLES ");

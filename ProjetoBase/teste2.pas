@@ -1,15 +1,18 @@
 program comandowhile (input, output);
-    var n, k: integer;
+    var n, K: integer;
         f1, f2, f3: integer;
+	a, b: char;
+	x, y: boolean;
+	l, r: string;
 begin
     read(n);
-    f1:=0; f2:=1; k:=1;
-    while(k<n+1)
+    f1:=0; f2:=1; K:=1;
+    while(K<n+1)
     begin
         f3:=f2+f1;
         f1:=f2;
         f2:=f3;
-        f1:=k+1;
+        f1:=K+1;
     end;
-    write(n, k);
+    write(n, K);
 end.

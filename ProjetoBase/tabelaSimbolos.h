@@ -6,6 +6,7 @@
 #define		VARTIPO_INT 		0
 #define		VARTIPO_CHAR		1
 #define		VARTIPO_STRING		2
+#define		VARTIPO_BOOLEAN		3
 
 typedef struct Simbolo* ApontadorSimbolo;
 

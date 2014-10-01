@@ -18,7 +18,7 @@ pulo_linha [\n]
 
 descarte [\t ]+
 
-ident [a-zAZ][a-zAZ1-9]*
+ident [a-zA-Z][a-zA-Z1-9]*
 
 numero [0-9]+
 
@@ -37,6 +37,30 @@ program { simbolo  = simb_program;
           IMPRIME("program ");
           return PROGRAM;
  }
+
+integer { simbolo = simb_integer;
+	  strncpy (token, yytext, TAM_TOKEN);
+	  IMPRIME("Integer");
+	  return INTEGER;
+	}
+
+char { simbolo = simb_char;
+	  strncpy (token, yytext, TAM_TOKEN);
+	  IMPRIME("Char");
+	  return CHAR;
+	}
+
+string { simbolo = simb_string;
+	  strncpy (token, yytext, TAM_TOKEN);
+	  IMPRIME("String");
+	  return STRING;
+	}
+
+boolean { simbolo = simb_boolean;
+	  strncpy (token, yytext, TAM_TOKEN);
+	  IMPRIME("Boolean");
+	  return BOOLEAN;
+	}
 
 var      { simbolo = simb_var;  
           strncpy (token, yytext, TAM_TOKEN);
@@ -69,6 +93,21 @@ while {simbolo = simb_while;
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("while ");
           return WHILE;}
+
+if	{simbolo = simb_if;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("if ");
+          return IF;}
+
+then	{simbolo = simb_then;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("then ");
+          return THEN;}
+
+else	{simbolo = simb_else;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("else ");
+          return ELSE;}
 
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
