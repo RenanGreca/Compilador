@@ -43,17 +43,27 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo) {
 	return NULL;
 }
 
+void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
+	int i=0;
+
+	while(i < n_posicoes){
+		topo->tipo = tipo;
+		topo = topo->proximo;
+		i++;
+	}
+
+	return;
+}
+
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a){
 	printf("                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
 	if(a->tipo == VARTIPO_INT){
 		printf("%14s", "Int |");
-	} else if(a->tipo == VARTIPO_INT_P){
-		printf("%14s", "Int* |");
 	} else if(a->tipo == VARTIPO_CHAR){
 		printf("%14s", "Char |");
-	} else if(a->tipo == VARTIPO_CHAR_P){
-		printf("%14s", "Char* |");
+	} else if(a->tipo == VARTIPO_STRING){
+		printf("%14s", "String |");
 	}
 	if(a->categoria == OPT_variavelSimples){
 		printf("%18s", "VARIAVEL SIMPLES ");

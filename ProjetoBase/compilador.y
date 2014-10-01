@@ -63,6 +63,7 @@ void Erro(char* s) {
 %%
 
 programa    :{ 
+		inicializaPilha(&pilha_tipos);
                 geraCodigo (NULL, "INPP");
                 deslocamento = 0;
                 nivel = 0;
@@ -74,9 +75,11 @@ programa    :{
 		a.deslocamento = deslocamento++;
                 strcpy(a.identificador, token);
                 // Adiciona o nome do programa na tabela de simbolos
-                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
-                //imprime(tabelaSimbolo);
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
+		setaTipo(tabelaSimbolo, 1, VARTIPO_STRING);
                 num_vars = 0;
+		// AMEM para o nome do programa
+                geraCodigo (NULL, "AMEM 1");
              }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
              PONTO {
@@ -117,6 +120,17 @@ declara_var : { num_vars=0;
               lista_id_var DOIS_PONTOS 
               tipo 
               { /* AMEM */
+		int tipo;
+		if(!strcmp(token, "integer")){
+			tipo = 0;
+		} else if(!strcmp(token, "char")){
+			tipo = 1;
+		} else if(!strcmp(token, "char")){
+			tipo = 2;
+		} else {
+			tipo = 0;
+		}
+		setaTipo(tabelaSimbolo, num_vars, tipo);
                 printf("Aloca memoria %d\n", num_vars);
                 char amem[10];
                 sprintf(amem, "AMEM %d", num_vars);
@@ -213,16 +227,16 @@ write   : WRITE {
 ;
 
 lista_vals:     numero {
-                        geraCodigo(NULL, "IMPR")
+                        geraCodigo(NULL, "IMPR");
                 } VIRGULA lista_vals |
                 ident {
-                        geraCodigo(NULL, "IMPR")
+                        geraCodigo(NULL, "IMPR");
                 } VIRGULA lista_vals |
                 numero {
-                        geraCodigo(NULL, "IMPR")
+                        geraCodigo(NULL, "IMPR");
                 } |
                 ident {
-                        geraCodigo(NULL, "IMPR")
+                        geraCodigo(NULL, "IMPR");
                 }
 
 read   : READ ABRE_PARENTESES IDENT {
@@ -236,13 +250,23 @@ read   : READ ABRE_PARENTESES IDENT {
 
 atribuicao: IDENT 
                 {
-                        printf("ATRIBUICAO: %s\n", token);
                         strcpy(temp, token);
                 } ATRIBUICAO expr {
                         //ARMZ
                         char armz[10];
                         ApontadorSimbolo a = busca(temp, tabelaSimbolo);
 			if(a != NULL) {
+				int *valor_pilha;
+
+				printf(".........................[TESTE FINAL EXPR] VARIAVEL %s (tipo: %d) recebe valor de expressao.\n", a->identificador, a->tipo);
+				printf(".........................Desempilhando tipo da expressao...");
+				valor_pilha = desempilha(&pilha_tipos);
+				printf("%d...\n", *valor_pilha);
+				// Checa valor da pilha de valores
+				if(*valor_pilha != a->tipo){
+					printf("Tipo errado!\n");
+					return;
+				}
                         	sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
                         	geraCodigo(NULL, armz);
 			} else {
@@ -280,6 +304,18 @@ boolexpr   :    expr |
 
 expr       :    expr MAIS termo 
                 {
+			int *a, *b;
+			printf(".........................[Desempilhando]...");
+			a = desempilha(&pilha_tipos);
+			printf("%d...", *a);
+			b = desempilha(&pilha_tipos);
+			printf("%d...\n", *b);	
+			if(a != b){
+				printf("Expressao com tipos diferentes!\n");
+				return;
+			} else {
+				empilha(&pilha_tipos, a);
+			}
                         geraCodigo(NULL, "SOMA");
                 } |
                 expr MENOS termo
@@ -288,7 +324,7 @@ expr       :    expr MAIS termo
                 }  | 
                 expr OR termo
                 {
-                        geraCodigo(NULL, "DISJ")
+                        geraCodigo(NULL, "DISJ");
                 } |
                 termo
 ;
@@ -303,7 +339,7 @@ termo         : termo ASTERISCO val
                 } | 
                 termo AND val
                 {
-                        geraCodigo(NULL, "CONJ")
+                        geraCodigo(NULL, "CONJ");
                 } |
                 val
 ;
@@ -323,13 +359,29 @@ val        :    ABRE_PARENTESES expr FECHA_PARENTESES |
 ident      : IDENT
                 {
                         ApontadorSimbolo a = busca(token, tabelaSimbolo);
-                        char crvl[10];
-                        sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                        geraCodigo(NULL, crvl);
+			if(a != NULL) {
+				// Empilha na pilha de tipos
+				printf(".........................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo);
+				int tipo_tmp = a->tipo;
+				empilha(&pilha_tipos, &tipo_tmp);
+
+				char crvl[10];
+				sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+				geraCodigo(NULL, crvl);
+			} else {
+				printf("Variavel %s nao declarada.\n", a->identificador);
+				return;
+			}
                 }
 ;
 numero     : NUMERO {
-                        char crct[10];
+			// Empilha na pilha de tipos
+			printf(".........................[Empilhando] CONSTANTE (tipo: 0)\n");
+			int i;
+			i = VARTIPO_INT;	
+			empilha(&pilha_tipos, &i);
+                        
+			char crct[10];
                         sprintf(crct, "CRCT %s", token);
                         geraCodigo(NULL, crct);
                 }
