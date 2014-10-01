@@ -57,7 +57,7 @@ void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
 
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a){
-	printf("                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
+	printf("..............................|                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
 	if(a->tipo == VARTIPO_INT){
 		printf("%14s", "Int |");
 	} else if(a->tipo == VARTIPO_CHAR){
@@ -88,11 +88,11 @@ void imprimeTabela(ApontadorSimbolo topo) {
 }
 
 void imprime(ApontadorSimbolo topo){
-	printf("-------------- TABELA -----------------------------------------------------------------------------------#\n");
-	printf("                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA         #\n");
-	printf("---------------------------------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- TABELA -----------------------------------------------------------------------------------#\n");
+	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA         #\n");
+	printf("..............................|---------------------------------------------------------------------------------------------------------#\n");
 	imprimeTabela(topo);
-	printf("-------------- FINISH -----------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- FINISH -----------------------------------------------------------------------------------#\n");
 
 	return;
 }

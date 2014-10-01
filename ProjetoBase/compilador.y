@@ -14,6 +14,8 @@
 #include "tabelaSimbolos.h"
 #include "pilha.h"
 
+#define _DEBUG 1
+
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
 
 char temp[10], erro[100], s_rotulo[10];
@@ -176,7 +178,7 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
-comando_composto: T_BEGIN comandos_ T_END { imprime(tabelaSimbolo); }
+comando_composto: T_BEGIN comandos_ T_END { if(_DEBUG){ imprime(tabelaSimbolo); } }
 ;
 
 comandos_ : comandos
@@ -257,11 +259,12 @@ atribuicao: IDENT
                         ApontadorSimbolo a = busca(temp, tabelaSimbolo);
 			if(a != NULL) {
 				int *valor_pilha;
-
-				printf(".........................[TESTE FINAL EXPR] VARIAVEL %s (tipo: %d) recebe valor de expressao.\n", a->identificador, a->tipo);
-				printf(".........................Desempilhando tipo da expressao...");
+				if(_DEBUG){
+					printf("..............................[TESTE FINAL EXPR] VARIAVEL %s (tipo: %d) recebe valor de expressao.\n", a->identificador, a->tipo);
+					printf("..............................Desempilhando tipo da expressao...");
+				}
 				valor_pilha = desempilha(&pilha_tipos);
-				printf("%d...\n", *valor_pilha);
+				if(_DEBUG){ printf("%d...\n", *valor_pilha); }
 				// Checa valor da pilha de valores
 				if(*valor_pilha != a->tipo){
 					printf("Tipo errado!\n");
@@ -283,21 +286,93 @@ atribuicao: IDENT
 
 boolexpr   :    expr | 
                 expr IGUAL expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: =)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("IGUAL com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMIG");
                         } |
                 expr DIFERENTE expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: !=)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("DIFERENTE com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMDG");
                         } | 
                 expr MENOR expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: <)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("MENOR com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMME");
                         } | 
                 expr MAIOR expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: >)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("MAIOR com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMMA");
                         } | 
                 expr MENOR_IGUAL expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: <=)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("MENOR_IGUAL com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMEG");
                         } | 
                 expr MAIOR_IGUAL expr {
+				int *a, *b;
+				if(_DEBUG){ printf("..............................[Desempilhando (expr: >=)]..."); }
+				a = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...", *a); }
+				b = desempilha(&pilha_tipos);
+				if(_DEBUG){ printf("%d...\n", *b); }	
+				if(*a != *b){
+					printf("MAIOR_IGUAL com tipos diferentes!\n");
+					return;
+				} else {
+					empilhaTipo(&pilha_tipos, *a);
+				}
                                 geraCodigo(NULL, "CMAG");
                         }
 ;
@@ -305,25 +380,49 @@ boolexpr   :    expr |
 expr       :    expr MAIS termo 
                 {
 			int *a, *b;
-			printf(".........................[Desempilhando]...");
+			if(_DEBUG){ printf("..............................[Desempilhando (expr: +)]..."); }
 			a = desempilha(&pilha_tipos);
-			printf("%d...", *a);
+			if(_DEBUG){ printf("%d...", *a); }
 			b = desempilha(&pilha_tipos);
-			printf("%d...\n", *b);	
-			if(a != b){
-				printf("Expressao com tipos diferentes!\n");
+			if(_DEBUG){ printf("%d...\n", *b); }	
+			if(*a != *b){
+				printf("SOMA com tipos diferentes!\n");
 				return;
 			} else {
-				empilha(&pilha_tipos, a);
+				empilhaTipo(&pilha_tipos, *a);
 			}
                         geraCodigo(NULL, "SOMA");
                 } |
                 expr MENOS termo
                 {
+			int *a, *b;
+			if(_DEBUG){ printf("..............................[Desempilhando (expr: -)]..."); }
+			a = desempilha(&pilha_tipos);
+			if(_DEBUG){ printf("%d...", *a); }
+			b = desempilha(&pilha_tipos);
+			if(_DEBUG){ printf("%d...\n", *b); }	
+			if(*a != *b){
+				printf("DIFERENCA com tipos diferentes!\n");
+				return;
+			} else {
+				empilhaTipo(&pilha_tipos, *a);
+			}
                         geraCodigo(NULL, "SUBT");
                 }  | 
                 expr OR termo
                 {
+			int *a, *b;
+			if(_DEBUG){ printf("..............................[Desempilhando (expr: OR)]..."); }
+			a = desempilha(&pilha_tipos);
+			if(_DEBUG){ printf("%d...", *a); }
+			b = desempilha(&pilha_tipos);
+			if(_DEBUG){ printf("%d...\n", *b); }	
+			if(*a != *b){
+				printf("OR com tipos diferentes!\n");
+				return;
+			} else {
+				empilhaTipo(&pilha_tipos, *a);
+			}
                         geraCodigo(NULL, "DISJ");
                 } |
                 termo
@@ -361,9 +460,9 @@ ident      : IDENT
                         ApontadorSimbolo a = busca(token, tabelaSimbolo);
 			if(a != NULL) {
 				// Empilha na pilha de tipos
-				printf(".........................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo);
+				if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
 				int tipo_tmp = a->tipo;
-				empilha(&pilha_tipos, &tipo_tmp);
+				empilhaTipo(&pilha_tipos, tipo_tmp);
 
 				char crvl[10];
 				sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
@@ -376,10 +475,10 @@ ident      : IDENT
 ;
 numero     : NUMERO {
 			// Empilha na pilha de tipos
-			printf(".........................[Empilhando] CONSTANTE (tipo: 0)\n");
+			if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 0)\n"); }
 			int i;
 			i = VARTIPO_INT;	
-			empilha(&pilha_tipos, &i);
+			empilhaTipo(&pilha_tipos, i);
                         
 			char crct[10];
                         sprintf(crct, "CRCT %s", token);

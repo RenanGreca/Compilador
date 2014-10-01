@@ -6,5 +6,6 @@ int topo;
 } PilhaT;
 int inicializaPilha(PilhaT *);
 int empilha(PilhaT *pilha, void *);
+int empilhaTipo(PilhaT *, int);
 void * desempilha(PilhaT *);
 void * desempilhaMesmoNULL(PilhaT *);

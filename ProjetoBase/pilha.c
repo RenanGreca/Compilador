@@ -14,6 +14,24 @@ int inicializaPilha(PilhaT *pilha) {
 	}
 }
 
+int empilhaTipo(PilhaT *pilha, int tipo){
+	int *tmp;
+	
+	tmp = malloc(sizeof(int));
+	if (pilha == NULL) {
+		trataErro(ERRO_PILHA_N_EXISTE, "");
+	}
+	else if (pilha->topo > PILHA_TAM) {
+		trataErro(ERRO_PILHA_TAM_EXCED, "");
+	}
+	else {
+		*tmp = tipo;
+		pilha->elemento[pilha->topo] = tmp;
+		pilha->topo++;
+	}
+	return 0;
+}
+
 int empilha(PilhaT *pilha, void *novo_elemento) {
 	if (pilha == NULL) {
 		trataErro(ERRO_PILHA_N_EXISTE, "");
