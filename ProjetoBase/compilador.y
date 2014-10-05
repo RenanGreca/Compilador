@@ -18,7 +18,7 @@
 
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
 
-char temp[10], erro[100], s_rotulo[10];
+char temp[100], temp_if[100], erro[100], s_rotulo[10];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
@@ -77,6 +77,9 @@ int verificaTipos(char *op) {
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
+
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
 
 %%
 
@@ -194,15 +197,15 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
-comando_composto: T_BEGIN comandos_ T_END { if(_DEBUG){ imprime(tabelaSimbolo); } }
+comando_composto: T_BEGIN comandos_ T_END 
 ;
 
 comandos_ : comandos
           |
 ; 
 
-comandos : comandos PONTO_E_VIRGULA comando
-         | comando
+comandos : comandos comando PONTO_E_VIRGULA
+         | comando PONTO_E_VIRGULA {printf("FINAL DE COMANDO!!\n");}
 ;
 
 comando : NUMERO DOIS_PONTOS
@@ -212,22 +215,9 @@ comando : NUMERO DOIS_PONTOS
         | while
         | read
 	| if
-        |
 ;
 
-if	: IF ABRE_PARENTESES
-          boolexpr
-          FECHA_PARENTESES {
-                char dsvf[10];
-                imprimeRotulo(proxRotulo(), s_rotulo);
-                sprintf(dsvf, "DSVF %s", s_rotulo);
-                geraCodigo(NULL, dsvf);
-          } THEN
-          comando_composto {
-		imprimeRotulo(prevRotulo(), s_rotulo);
-                geraCodigo(s_rotulo, "NADA");
-	  } |
-	  IF ABRE_PARENTESES
+/*if	: IF ABRE_PARENTESES
           boolexpr
           FECHA_PARENTESES {
                 char dsvf[10];
@@ -243,23 +233,61 @@ if	: IF ABRE_PARENTESES
 		}
 	  ELSE
 	  {
-		imprimeRotulo(prevRotulo(), temp);
+		imprimeRotulo(prevRotulo(), temp_if);
 		imprimeRotulo(prevRotulo(), s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
 	  }
 	  comando_composto
 	  {
-                geraCodigo(temp, "NADA");
-	  }
+                geraCodigo(temp_if, "NADA");
+	  } |
+	IF ABRE_PARENTESES
+          boolexpr
+          FECHA_PARENTESES {
+                char dsvf[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvf, "DSVF %s", s_rotulo);
+                geraCodigo(NULL, dsvf);
+          } THEN
+          comando_composto
+	  {	char dsvs[10];
+		imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvs, "DSVS %s", s_rotulo);
+                geraCodigo(NULL, dsvs);
+		}
+;*/
+
+if: if_simples{printf("IF_ELSE\n");} ELSE {
+		char dsvs[10];
+		imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvs, "DSVS %s", s_rotulo);
+                geraCodigo(NULL, dsvs);		
+		
+		prevRotulo();
+		imprimeRotulo(prevRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+	} comando {
+		proxRotulo();
+		imprimeRotulo(proxRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+	}
+  | if_simples{
+		printf("IF_SIMPLES\n");
+		imprimeRotulo(prevRotulo(), s_rotulo);
+                geraCodigo(s_rotulo, "NADA");
+	}
+  
 ;
 
-/*if	: IF ABRE_PARENTESES boolexpr FECHA_PARENTESES 
-          comando_composto |
-	  IF ABRE_PARENTESES boolexpr FECHA_PARENTESES 
-          comando_composto
-	  ELSE
-	  comando_composto
-;*/
+if_simples: IF ABRE_PARENTESES boolexpr FECHA_PARENTESES {
+		char dsvf[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                sprintf(dsvf, "DSVF %s", s_rotulo);
+                geraCodigo(NULL, dsvf);
+	  }
+	  THEN
+          comando
+;
 
 while   : {
                 imprimeRotulo(proxRotulo(), s_rotulo);
