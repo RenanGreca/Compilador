@@ -7,12 +7,11 @@ begin
     begin
         if (i / 2 * 2 = i) then
 	begin
-            write (i,0)
-	end;
-        else
+            write (i,0);
+	end else
 	begin
             write (i,1);
 	end;
-        i := i + 1
+        i := i + 1;
     end;
 end.

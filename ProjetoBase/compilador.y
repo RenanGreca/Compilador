@@ -270,6 +270,8 @@ if: if_simples{printf("IF_ELSE\n");} ELSE {
 		proxRotulo();
 		imprimeRotulo(proxRotulo(), s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
+		prevRotulo();
+		prevRotulo();
 	}
   | if_simples{
 		printf("IF_SIMPLES\n");
