@@ -109,6 +109,11 @@ else	{simbolo = simb_else;
           IMPRIME("else ");
           return ELSE;}
 
+procedure {simbolo = simb_proc;
+	  strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("procedure ");
+          return PROCEDURE;}
+
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" atribuicao  ");

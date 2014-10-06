@@ -77,6 +77,7 @@ int verificaTipos(char *op) {
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
+%token PROCEDURE
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -106,11 +107,13 @@ programa    :{
              PONTO {
                 geraCodigoDMEM();
                 geraCodigo (NULL, "PARA");
+		imprime(tabelaSimbolo);
              }
 ;
 
 bloco       : 
               parte_declara_vars
+	      proc_list 
               {
                 //imprimeRotulo(proxRotulo());
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -217,45 +220,7 @@ comando : NUMERO DOIS_PONTOS
 	| if
 ;
 
-/*if	: IF ABRE_PARENTESES
-          boolexpr
-          FECHA_PARENTESES {
-                char dsvf[10];
-                imprimeRotulo(proxRotulo(), s_rotulo);
-                sprintf(dsvf, "DSVF %s", s_rotulo);
-                geraCodigo(NULL, dsvf);
-          } THEN
-          comando_composto
-	  {	char dsvs[10];
-		imprimeRotulo(proxRotulo(), s_rotulo);
-                sprintf(dsvs, "DSVS %s", s_rotulo);
-                geraCodigo(NULL, dsvs);
-		}
-	  ELSE
-	  {
-		imprimeRotulo(prevRotulo(), temp_if);
-		imprimeRotulo(prevRotulo(), s_rotulo);
-                geraCodigo(s_rotulo, "NADA");
-	  }
-	  comando_composto
-	  {
-                geraCodigo(temp_if, "NADA");
-	  } |
-	IF ABRE_PARENTESES
-          boolexpr
-          FECHA_PARENTESES {
-                char dsvf[10];
-                imprimeRotulo(proxRotulo(), s_rotulo);
-                sprintf(dsvf, "DSVF %s", s_rotulo);
-                geraCodigo(NULL, dsvf);
-          } THEN
-          comando_composto
-	  {	char dsvs[10];
-		imprimeRotulo(proxRotulo(), s_rotulo);
-                sprintf(dsvs, "DSVS %s", s_rotulo);
-                geraCodigo(NULL, dsvs);
-		}
-;*/
+/* COMANDO: IF */
 
 if: if_simples{printf("IF_ELSE\n");} ELSE {
 		char dsvs[10];
@@ -273,7 +238,7 @@ if: if_simples{printf("IF_ELSE\n");} ELSE {
 		prevRotulo();
 		prevRotulo();
 	}
-  | if_simples{
+  	| if_simples{
 		printf("IF_SIMPLES\n");
 		imprimeRotulo(prevRotulo(), s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
@@ -291,10 +256,11 @@ if_simples: IF ABRE_PARENTESES boolexpr FECHA_PARENTESES {
           comando
 ;
 
+/* COMANDO: WHILE */
+
 while   : {
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
-                //imprimeRotulo(proxRotulo());
           } WHILE ABRE_PARENTESES
           boolexpr
           FECHA_PARENTESES
@@ -304,7 +270,7 @@ while   : {
                 sprintf(dsvf, "DSVF %s", s_rotulo);
                 geraCodigo(NULL, dsvf);
           }
-          comando_composto
+          comando
           {
                 char temp[10];
                 imprimeRotulo(prevRotulo(), temp);
@@ -315,6 +281,45 @@ while   : {
                 geraCodigo(temp, "NADA"); // rotulo de saida do loop
           }
 ;
+
+/* COMANDO: PROCEDURE */
+
+proc_list: proc_list proc
+	 | proc
+	 | 
+
+;
+
+proc: 	proc_sem_arg PONTO_E_VIRGULA bloco PONTO_E_VIRGULA
+    |   proc_sem_arg ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco PONTO_E_VIRGULA
+;
+
+proc_sem_arg: PROCEDURE IDENT 	{
+					nivel++;
+					deslocamento = 0;
+
+					Simbolo a;
+					a.identificador = malloc(sizeof(token));
+					strcpy(a.identificador, token);
+					a.deslocamento = deslocamento;
+					a.nivel = nivel;
+
+					char inpr[10];
+					imprimeRotulo(proxRotulo(), s_rotulo);
+					sprintf(inpr, "INPR %d", nivel);
+					geraCodigo(s_rotulo, inpr);
+
+					//strcpy(a.rotulo, s_rotulo);
+					/* insere vars na tabela de símbolos */
+					tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
+					//printf("Adicionando simbolo a tabela\n");
+					//imprime(tabelaSimbolo);
+					num_vars++;
+				}
+
+;
+
+/* COMANDO: WRITE */
 
 write   : WRITE {
                 //printf("Imprimindo\n");
@@ -342,7 +347,7 @@ read   : READ ABRE_PARENTESES IDENT {
 		        geraCodigo(NULL, "LEIT");
 		        geraCodigo(NULL, armz);
 		} else {
-			sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
+			sprintf(erro, "Variavel '%s' nao foi declarada!", token);
 			Erro(erro);
 			return;
 		}
@@ -509,7 +514,7 @@ ident      : IDENT
 				sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
 				geraCodigo(NULL, crvl);
 			} else {
-				printf("Variavel %s nao declarada.\n", a->identificador);
+				printf("Variavel %s nao declarada.\n", token);
 				return;
 			}
                 }
