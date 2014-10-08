@@ -12,6 +12,7 @@ ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
 	tmp->nivel = simbolo.nivel;
 	tmp->deslocamento = simbolo.deslocamento;
 	tmp->categoria = categoria;
+	tmp->rotulo = simbolo.rotulo;
 
 	tmp->proximo = topo;
 	topo = tmp;
@@ -58,6 +59,7 @@ void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a){
 	printf("..............................|                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
+	// TIPO
 	if(a->tipo == VARTIPO_INT){
 		printf("%14s", "Int |");
 	} else if(a->tipo == VARTIPO_CHAR){
@@ -67,14 +69,20 @@ void imprimeSimbolo(ApontadorSimbolo a){
 	} else if(a->tipo == VARTIPO_BOOLEAN){
 		printf("%14s", "Boolean |");
 	}
+	// CATEGORIA
 	if(a->categoria == OPT_variavelSimples){
-		printf("%18s", "VARIAVEL SIMPLES ");
+		printf("%18s", "VARIAVEL SIMPLES |");
 	} else if(a->categoria == OPT_ParametroFormal){
-		printf("%18s", "PARAMETRO FORMAL ");
+		printf("%18s", "PARAMETRO FORMAL |");
 	} else if(a->categoria == OPT_Procedimento){
-		printf("%18s", "PROCEDIMENTO ");
+		printf("%18s", "PROCEDIMENTO |");
 	}	
-
+	// ROTULO (APENAS PARA FUNCAO E PROCEDIMENTO)
+	if(a->categoria == OPT_Procedimento){
+		printf("%6s", a->rotulo);
+	} else {
+		printf("%6s", "");
+	}
 	printf("   |\n");
 }
 
@@ -90,11 +98,11 @@ void imprimeTabela(ApontadorSimbolo topo) {
 }
 
 void imprime(ApontadorSimbolo topo){
-	printf("..............................|-------------- TABELA -----------------------------------------------------------------------------------#\n");
-	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA         #\n");
-	printf("..............................|---------------------------------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- TABELA -----------------------------------------------------------------------------------------#\n");
+	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  #\n");
+	printf("..............................|---------------------------------------------------------------------------------------------------------------#\n");
 	imprimeTabela(topo);
-	printf("..............................|-------------- FINISH -----------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- FINISH -----------------------------------------------------------------------------------------#\n");
 
 	return;
 }

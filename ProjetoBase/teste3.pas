@@ -1,8 +1,20 @@
 program comandoIf(input, output);
     var i, j: integer;
+
+	procedure p;
+	begin
+		if(1>1) then
+			write(1);
+	end;
+
 begin
-	while(i>0)
-		while(j>0)
-			while(i>j)
-				write(j);
+	if(i>0) then
+		write(i)
+	else
+		write(j);
+
+	if(i>0) then
+		write(i)
+	else
+		write(j);
 end.

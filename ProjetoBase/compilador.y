@@ -105,23 +105,46 @@ programa    :{
              }
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco
              PONTO {
-                geraCodigoDMEM();
                 geraCodigo (NULL, "PARA");
 		imprime(tabelaSimbolo);
              }
 ;
 
 bloco       : 
-              parte_declara_vars
+              parte_declara_vars {
+		// Empilha rótulo de entrada do procedimento
+		int *i = malloc(sizeof(int));
+		*i = rotulo;
+		empilha(&pilha_rot, i);		
+
+		// Empilha número de vars do procedimento
+		int *j = malloc(sizeof(int));		
+		*j = num_vars;
+		empilha(&pilha_amem_dmem, j);		
+
+		char dsvs[10];
+		imprimeRotulo(proxRotulo(), s_rotulo);		
+                sprintf(dsvs, "DSVS %s", s_rotulo);
+		geraCodigo(NULL, dsvs);
+		
+		nivel++;
+	      }
 	      proc_list 
               {
-                //imprimeRotulo(proxRotulo());
-                imprimeRotulo(proxRotulo(), s_rotulo);
+		nivel--;
+		int *i = desempilha(&pilha_rot);
+                imprimeRotulo(*i, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
-                empilhaAMEM(deslocamento);
+
               }
 
               comando_composto 
+		{
+			num_vars = *(int *)desempilha(&pilha_amem_dmem);		
+			char dmem[10];
+			sprintf(dmem, "DMEM %d", num_vars);
+			geraCodigo(NULL, dmem);
+		}
               ;
 
 
@@ -144,7 +167,7 @@ declara_var : { num_vars=0;
               lista_id_var DOIS_PONTOS 
               tipo 
               { /* AMEM */
-                printf("Aloca memoria %d\n", num_vars);
+                printf("..............................[Aloca memoria] %d variaveis\n", num_vars);
                 char amem[10];
                 sprintf(amem, "AMEM %d", num_vars);
                 //printf("%s\n", amem);
@@ -207,13 +230,13 @@ comandos_ : comandos
           |
 ; 
 
-comandos : comandos comando PONTO_E_VIRGULA
+comandos : comandos comando PONTO_E_VIRGULA {printf("FINAL DE COMANDO!!\n");}
          | comando PONTO_E_VIRGULA {printf("FINAL DE COMANDO!!\n");}
 ;
 
 comando : NUMERO DOIS_PONTOS
         | comando_composto
-        | atribuicao
+	| proc_atribuicao
         | write
         | while
         | read
@@ -222,25 +245,22 @@ comando : NUMERO DOIS_PONTOS
 
 /* COMANDO: IF */
 
-if: if_simples{printf("IF_ELSE\n");} ELSE {
+if: if_simples{
+		printf("IF_ELSE\n");} ELSE {
 		char dsvs[10];
 		imprimeRotulo(proxRotulo(), s_rotulo);
                 sprintf(dsvs, "DSVS %s", s_rotulo);
                 geraCodigo(NULL, dsvs);		
 		
-		prevRotulo();
-		imprimeRotulo(prevRotulo(), s_rotulo);
+		imprimeRotulo(rotulo-2, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
 	} comando {
-		proxRotulo();
-		imprimeRotulo(proxRotulo(), s_rotulo);
+		imprimeRotulo(rotulo-1, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
-		prevRotulo();
-		prevRotulo();
 	}
   	| if_simples{
 		printf("IF_SIMPLES\n");
-		imprimeRotulo(prevRotulo(), s_rotulo);
+		imprimeRotulo(rotulo-1, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
 	}
   
@@ -273,8 +293,8 @@ while   : {
           comando
           {
                 char temp[10];
-                imprimeRotulo(prevRotulo(), temp);
-                imprimeRotulo(prevRotulo(), s_rotulo);
+                imprimeRotulo(rotulo-1, temp);
+                imprimeRotulo(rotulo-2, s_rotulo);
                 char dsvs[10];
                 sprintf(dsvs, "DSVS %s", s_rotulo); 
                 geraCodigo(NULL, dsvs); // rotulo de volta ao loop
@@ -290,12 +310,16 @@ proc_list: proc_list proc
 
 ;
 
-proc: 	proc_sem_arg PONTO_E_VIRGULA bloco PONTO_E_VIRGULA
+proc: 	proc_sem_arg PONTO_E_VIRGULA bloco {
+		char rtpr[10];
+		sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+		geraCodigo(NULL, rtpr);
+	} PONTO_E_VIRGULA
     |   proc_sem_arg ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA bloco PONTO_E_VIRGULA
 ;
 
 proc_sem_arg: PROCEDURE IDENT 	{
-					nivel++;
+
 					deslocamento = 0;
 
 					Simbolo a;
@@ -306,6 +330,8 @@ proc_sem_arg: PROCEDURE IDENT 	{
 
 					char inpr[10];
 					imprimeRotulo(proxRotulo(), s_rotulo);
+					a.rotulo = malloc(sizeof(s_rotulo));
+					strcpy(a.rotulo, s_rotulo);
 					sprintf(inpr, "INPR %d", nivel);
 					geraCodigo(s_rotulo, inpr);
 
@@ -323,21 +349,22 @@ proc_sem_arg: PROCEDURE IDENT 	{
 
 write   : WRITE {
                 //printf("Imprimindo\n");
-        } ABRE_PARENTESES lista_vals FECHA_PARENTESES
+        } ABRE_PARENTESES lista_vals_write FECHA_PARENTESES
 ;
 
-lista_vals:     numero {
+lista_vals_write:     numero {
                         geraCodigo(NULL, "IMPR");
-                } VIRGULA lista_vals |
+                } VIRGULA lista_vals_write |
                 ident {
                         geraCodigo(NULL, "IMPR");
-                } VIRGULA lista_vals |
+                } VIRGULA lista_vals_write |
                 numero {
                         geraCodigo(NULL, "IMPR");
                 } |
                 ident {
                         geraCodigo(NULL, "IMPR");
                 }
+;
 
 read   : READ ABRE_PARENTESES IDENT {
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
@@ -354,10 +381,12 @@ read   : READ ABRE_PARENTESES IDENT {
           } FECHA_PARENTESES
 ;
 
-atribuicao: IDENT 
-                {
-                        strcpy(temp, token);
-                } ATRIBUICAO expr {
+proc_atribuicao: IDENT { strcpy(temp, token); } proc_ou_atrib;
+;
+
+proc_ou_atrib: atribuicao | chama_proc;
+
+atribuicao: ATRIBUICAO expr {
                         //ARMZ
                         char armz[10];
                         ApontadorSimbolo a = busca(temp, tabelaSimbolo);
@@ -382,6 +411,23 @@ atribuicao: IDENT
 				return;
 			}
                 }
+;
+
+chama_proc: {
+                        char cmpr[10];
+			printf("Procurando pelo procedimento: %s\n", temp);
+                        ApontadorSimbolo a = busca(temp, tabelaSimbolo);
+			if(a != NULL) {
+				int *valor_pilha;
+                        	sprintf(cmpr, "CMPR %s,%d", a->rotulo, nivel);
+                        	geraCodigo(NULL, cmpr);
+			} else {
+				sprintf(erro, "Procedimento '%s' nao foi declarado!", temp);
+				Erro(erro);
+				return;
+			}
+		}
+
 ;
 
 /*expr       :    ABRE_PARENTESES expr FECHA_PARENTESES |

@@ -1,10 +1,10 @@
 program escopoProc (input, output);
     var x, y: integer;
-    procedure p;
+    procedure p(a: integer, var b: integer);
         var z: integer;
         begin
 		write(x);
         end;
     begin
-        read(x);
+        p(1);
     end.
