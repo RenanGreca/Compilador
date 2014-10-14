@@ -1,0 +1,44 @@
+## Geral ##
+INPP        inicia programa
+PARA        termina programa
+AMEM x      aloca x espaços na memória
+DMEM x      dealoca x espaços
+NADA        nada
+LEIT        lê uma variável
+IMPR x      imprime x
+
+## Valores ##
+ARMZ x,y    armazena valor na variável de endereço x,y
+CRVL x,y    carrega o valor da variável no end. x,y
+CRCT x      carrega a constante x
+# Indiretos #
+CREN x,y    carrega o endereço de x,y
+CRVI x,y    carrega o valor do endereço apontado por x,y
+ARMI x,y    armazena valor no endereço apontado por x,y
+
+## Operações ##
+SOMA        adição dos dois itens no topo da pilha
+SUBT        subtração
+MULT        multiplicação
+DIVI        divisão
+CONJ        conjunção (and)
+DISJ        disjunção (or)
+
+## Comparações ##
+CMIG        compara igual
+CMDG        compara diferente
+CMME        compara menor
+CMMA        compara maior
+CMEG        compara menor-igual
+CMAG        compara maior-igual
+
+## Controle de fluxo ##
+DSVS x      desvia sempre para o rótulo x
+DSVF x      desvia se falso
+DSVR x,y,z  desvia para o rótulo x, nível léxico destino y, nível léxico atual z
+ENRT x,y    entra no rótulo dentro no nível léxico x num procedimento com y variáveis locais
+
+## Prodecimentos ##
+CHPR x,y    chama procedimento no rótulo x, nível léxico atual y
+ENPR x      entra em procedimento de nível léxico x
+RTPR x,y    retorna procedimento nível léxico x, y parâmetros a desempilhar
