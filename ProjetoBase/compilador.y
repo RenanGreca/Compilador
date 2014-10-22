@@ -16,7 +16,9 @@
 
 #define _DEBUG 1
 
-int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0;
+int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0, num_argumentos = 0;
+ApontadorSimbolo procedimentoBuffer;
+Simbolo simboloBuffer;
 
 char temp[100], temp_if[100], erro[100], s_rotulo[10];
 // Instancia TABELA DE SIMBOLOS
@@ -238,13 +240,7 @@ comandos_ : comandos
 ;
 
 comandos :  comandos comando PONTO_E_VIRGULA
-            {
-                printf("FINAL DE COMANDO!!\n");
-            }
           | comando PONTO_E_VIRGULA 
-            {
-                printf("FINAL DE COMANDO!!\n");
-            }
 ;
 
 comando :   NUMERO DOIS_PONTOS
@@ -259,9 +255,6 @@ comando :   NUMERO DOIS_PONTOS
 /* COMANDO: IF */
 
 if:         if_simples
-            {
-                printf("IF_ELSE\n");
-            }
             ELSE 
             {
                 char dsvs[10];
@@ -278,7 +271,6 @@ if:         if_simples
             }
           | if_simples
             {
-                printf("IF_SIMPLES\n");
                 imprimeRotulo(rotulo-1, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
             }
@@ -321,25 +313,77 @@ while:      {
 
 /* COMANDO: PROCEDURE */
 
+ident_param: IDENT	{
+				Simbolo a;
+				a.identificador = malloc(sizeof(token));
+				strcpy(a.identificador, token);
+				a.nivel = nivel;
+				//a->identificador = token;
+				tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
+				//printf("Adicionando simbolo a tabela\n");
+				//imprime(tabelaSimbolo);
+				num_vars++;
+				num_argumentos++;
+				
+			}
+;
+
+lista_param_proc:	ident_param VIRGULA lista_param_proc
+		|	ident_param DOIS_PONTOS tipo	{
+								num_vars = 0;
+							}
+		|	ident_param DOIS_PONTOS tipo	{
+								num_vars = 0;
+							}
+			PONTO_E_VIRGULA lista_param_proc
+;
+
 proc_list:  proc_list proc
           | proc
           |
 ;
 
-proc:       proc_sem_arg PONTO_E_VIRGULA bloco
-            {
-                char rtpr[10];
-                sprintf(rtpr, "RTPR %d, %d", nivel, 0);
-                geraCodigo(NULL, rtpr);
-            }
-            PONTO_E_VIRGULA
-          | proc_sem_arg ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
-            bloco PONTO_E_VIRGULA
+proc:	proc_sem_arg { printf("..............................[Criando procedimento sem argumentos]\n"); }
+	PONTO_E_VIRGULA
+	bloco	{
+			char rtpr[10];
+		        sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+		        geraCodigo(NULL, rtpr);
+       		}
+	PONTO_E_VIRGULA
+      | proc_sem_arg { printf("..............................[Criando procedimento com argumentos]\n"); }
+	ABRE_PARENTESES
+	lista_param_proc	{
+					/* insere vars na tabela de símbolos */
+					ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+					if(a != NULL) {
+					    char armz[10];
+					    sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+					    geraCodigo(NULL, "LEIT");
+					    geraCodigo(NULL, armz);
+					} else {
+					    sprintf(erro, "Variavel '%s' nao foi declarada!", token);
+					    Erro(erro);
+					    return;
+					}
+					a->n_args = num_argumentos;
+					setaDeslocamento(tabelaSimbolo, num_argumentos, -4);
+					
+				}
+	FECHA_PARENTESES
+	PONTO_E_VIRGULA
+	bloco	{
+		char rtpr[10];
+		sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+		geraCodigo(NULL, rtpr);
+	}
+	PONTO_E_VIRGULA
 ;
 
 proc_sem_arg:
             PROCEDURE IDENT
             {
+		num_argumentos = 0;
                 deslocamento = 0;
 
                 Simbolo a;
@@ -347,6 +391,7 @@ proc_sem_arg:
                 strcpy(a.identificador, token);
                 a.deslocamento = deslocamento;
                 a.nivel = nivel;
+		a.n_args = 0;
 
                 char inpr[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -355,9 +400,9 @@ proc_sem_arg:
                 sprintf(inpr, "INPR %d", nivel);
                 geraCodigo(s_rotulo, inpr);
 
+		simboloBuffer = a;
+		tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
                 //strcpy(a.rotulo, s_rotulo);
-                /* insere vars na tabela de símbolos */
-                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
                 //printf("Adicionando simbolo a tabela\n");
                 //imprime(tabelaSimbolo);
                 num_vars++;
@@ -419,9 +464,8 @@ proc_atribuicao:
             proc_ou_atrib
 ;
 
-proc_ou_atrib:
-            atribuicao
-          | chama_proc
+proc_ou_atrib:	atribuicao
+          |	chama_proc
 ;
 
 atribuicao: ATRIBUICAO expr
@@ -452,14 +496,58 @@ atribuicao: ATRIBUICAO expr
             }
 ;
 
-chama_proc: {
-                char cmpr[10];
-                printf("Procurando pelo procedimento: %s\n", temp);
+/* COMANDO: CHAMADA DE PROCEDIMENTO */
+
+lista_vals_chama_proc:	numero VIRGULA lista_vals_chama_proc { num_argumentos++; }
+		|	ident VIRGULA lista_vals_chama_proc { num_argumentos++; }
+		|	numero { num_argumentos++; }
+		|	ident { num_argumentos++; }
+		|
+;
+
+chama_proc: 	chama_proc_sem_arg	{
+						printf("..............................[Procedimento sem parametros]\n");
+						if(procedimentoBuffer->n_args == 0){
+							printf("..............................[Numero ccorreto de argumentos]\n");
+							char cmpr[10];
+							sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
+							geraCodigo(NULL, cmpr);
+						} else {
+							printf("..............................[Numero IINcorreto de argumentos]\n");
+						}
+					}
+	| 	chama_proc_sem_arg 	{
+						printf("..............................[Procedimento com parametros]\n");
+					}
+		 ABRE_PARENTESES
+		lista_vals_chama_proc	{
+						if(_DEBUG){ printf("..............................[Numero de argumentos] %d\n", num_argumentos); }
+						ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+						if(a != NULL) {
+							if(a->n_args == num_argumentos) {
+								printf("..............................[Numero correto de argumentos]\n");
+								char cmpr[10];
+								sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
+								geraCodigo(NULL, cmpr);
+							} else {
+								printf("..............................[Numero INcorreto de argumentos]\n");
+							}
+						} else {
+						    sprintf(erro, "Procedimento '%s' nao foi declarada!", token);
+						    Erro(erro);
+						    return;
+						}
+						num_argumentos = 0;
+					}
+		FECHA_PARENTESES
+;
+
+chama_proc_sem_arg: {
+		num_argumentos = 0;
+                printf("..............................[Procurando pelo procedimento] %s\n", temp);
                 ApontadorSimbolo a = busca(temp, tabelaSimbolo);
                 if(a != NULL) {
-                    int *valor_pilha;
-                    sprintf(cmpr, "CMPR %s,%d", a->rotulo, nivel);
-                    geraCodigo(NULL, cmpr);
+                    procedimentoBuffer = a;
                 } else {
                     sprintf(erro, "Procedimento '%s' nao foi declarado!", temp);
                     Erro(erro);

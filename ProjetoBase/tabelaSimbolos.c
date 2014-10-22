@@ -13,6 +13,7 @@ ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
 	tmp->deslocamento = simbolo.deslocamento;
 	tmp->categoria = categoria;
 	tmp->rotulo = simbolo.rotulo;
+	tmp->n_args = simbolo.n_args;
 
 	tmp->proximo = topo;
 	topo = tmp;
@@ -42,6 +43,18 @@ ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo) {
 	}
 
 	return NULL;
+}
+
+void setaDeslocamento(ApontadorSimbolo topo, int n_posicoes, int deslocamento) {
+	int i=0;
+
+	while(i < n_posicoes){
+		topo->deslocamento = deslocamento--;
+		topo = topo->proximo;
+		i++;
+	}
+
+	return;
 }
 
 void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
@@ -83,6 +96,13 @@ void imprimeSimbolo(ApontadorSimbolo a){
 	} else {
 		printf("%6s", "");
 	}
+	printf("   |");
+	// NUMERO DE VARIAVEIS
+	if(a->categoria == OPT_Procedimento){
+		printf("%6d", a->n_args);
+	} else {
+		printf("%6s", "");
+	}
 	printf("   |\n");
 }
 
@@ -98,11 +118,11 @@ void imprimeTabela(ApontadorSimbolo topo) {
 }
 
 void imprime(ApontadorSimbolo topo){
-	printf("..............................|-------------- TABELA -----------------------------------------------------------------------------------------#\n");
-	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  #\n");
-	printf("..............................|---------------------------------------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- TABELA ----------------------------------------------------------------------------------------------------#\n");
+	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  | N_ARGS  |#\n");
+	printf("..............................|--------------------------------------------------------------------------------------------------------------------------#\n");
 	imprimeTabela(topo);
-	printf("..............................|-------------- FINISH -----------------------------------------------------------------------------------------#\n");
+	printf("..............................|-------------- FINISH ----------------------------------------------------------------------------------------------------#\n");
 
 	return;
 }

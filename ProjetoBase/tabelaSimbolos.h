@@ -23,7 +23,7 @@ typedef struct Simbolo {
 	int passagem;
 	// Procedimento
 	char* rotulo;
-	int n;
+	int n_args;
 	int* tiposParam;
 	int* passagemParam;
 }Simbolo;
