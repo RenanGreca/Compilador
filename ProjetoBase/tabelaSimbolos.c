@@ -13,6 +13,7 @@ ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
 	tmp->deslocamento = simbolo.deslocamento;
 	tmp->categoria = categoria;
 	tmp->rotulo = simbolo.rotulo;
+	tmp->passagem = simbolo.passagem;
 	tmp->n_args = simbolo.n_args;
 
 	tmp->proximo = topo;

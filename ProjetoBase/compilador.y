@@ -322,6 +322,7 @@ ident_param: IDENT  {
         a.identificador = malloc(sizeof(token));
         strcpy(a.identificador, token);
         a.nivel = nivel;
+        printf("Tipo: %d", paramtipo);
         a.passagem = paramtipo;
         //a->identificador = token;
         tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
@@ -615,7 +616,7 @@ ident_proc      : IDENT
                             printf("O parametro %s nao e o tipo esperado.\n", token);
                             return 1;
                         }
-                        printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d\n", a->identificador, num_argumentos);
+                        printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d PASSAGEM: %d\n", a->identificador, num_argumentos, a->passagem);
                         if(a->categoria == OPT_variavelSimples) {
                             if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
                                 char crvl[10];
