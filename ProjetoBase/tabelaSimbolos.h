@@ -8,6 +8,9 @@
 #define		VARTIPO_STRING		2
 #define		VARTIPO_BOOLEAN		3
 
+#define		PARAMTIPO_VALOR		0
+#define 	PARAMTIPO_REFER		1
+
 typedef struct Simbolo* ApontadorSimbolo;
 
 typedef struct Simbolo {
@@ -36,6 +39,8 @@ void retira(ApontadorSimbolo* topo, int index);
 
 // Busca simbolo na tabela
 ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo);
+
+void alterarNumeroArgumentos(ApontadorSimbolo procedure, int nArgumentos, int *vetorTipo, int *vetorPassagem);
 
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a);

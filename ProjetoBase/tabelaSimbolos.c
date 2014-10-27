@@ -21,6 +21,19 @@ ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria) {
 	return topo;
 }
 
+void alterarNumeroArgumentos(ApontadorSimbolo procedure, int nArgumentos, int *vetorTipo, int *vetorPassagem) {
+	printf("Entrou alterarNumeroArgumentos\n");
+	procedure->n_args = nArgumentos;
+	procedure->tiposParam = malloc(sizeof(int)*nArgumentos);
+	procedure->passagemParam = malloc(sizeof(int)*nArgumentos);
+
+	int i;
+	for(i=0; i<nArgumentos; i++) {
+		procedure->tiposParam[i] = vetorTipo[i];
+		procedure->passagemParam[i] = vetorPassagem[i];
+	}
+}
+
 // Retira simbolo da tabela
 void retira(ApontadorSimbolo* topo, int index) {
 	int i=0;
@@ -59,7 +72,7 @@ void setaDeslocamento(ApontadorSimbolo topo, int n_posicoes, int deslocamento) {
 
 void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
 	int i=0;
-
+	printf("...................n_posicoes: %d tipo: %d\n", n_posicoes, tipo);
 	while(i < n_posicoes){
 		topo->tipo = tipo;
 		topo = topo->proximo;
@@ -71,7 +84,15 @@ void setaTipo(ApontadorSimbolo topo, int n_posicoes, int tipo) {
 
 // Imprime um simbolo
 void imprimeSimbolo(ApontadorSimbolo a){
-	printf("..............................|                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
+	/*if(a->categoria == OPT_Procedimento){
+		int k;
+		printf("Vetor passagem:");
+		printf("%d", a->passagemParam[0]);
+		printf("%d", a->passagemParam[1]);
+	    printf("\n");
+	}*/
+
+	printf("....................|                    %14s | %14d | %14d |", a->identificador, a->nivel, a->deslocamento);
 	// TIPO
 	if(a->tipo == VARTIPO_INT){
 		printf("%14s", "Int |");
@@ -103,6 +124,23 @@ void imprimeSimbolo(ApontadorSimbolo a){
 	} else {
 		printf("%6s", "");
 	}
+	printf("   |");
+	// LISTA DE VARIAVEIS
+	if(a->categoria == OPT_Procedimento){
+		int i;
+		for(i=0;i<a->n_args;i++){
+			if(a->passagemParam[i] == PARAMTIPO_REFER){
+				printf("%s", "(VAR)");
+			} else {
+				printf("%s", "(---)");
+			}
+			if(a->tiposParam[i] == VARTIPO_INT){
+				printf("INT ");
+			} else if(a->tiposParam[i] == VARTIPO_CHAR){
+				printf("CHAR ");
+			}
+		}
+	}
 	printf("   |\n");
 }
 
@@ -117,12 +155,12 @@ void imprimeTabela(ApontadorSimbolo topo) {
 	return;
 }
 
-void imprime(ApontadorSimbolo topo){
-	printf("..............................|-------------- TABELA ----------------------------------------------------------------------------------------------------#\n");
-	printf("..............................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  | N_ARGS  |#\n");
-	printf("..............................|--------------------------------------------------------------------------------------------------------------------------#\n");
+void imprime(ApontadorSimbolo topo){	
+	printf("....................|-------------- TABELA ----------------------------------------------------------------------------------------------------#\n");
+	printf("....................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  | N_ARGS  | ARG_LIST#\n");
+	printf("....................|--------------------------------------------------------------------------------------------------------------------------#\n");
 	imprimeTabela(topo);
-	printf("..............................|-------------- FINISH ----------------------------------------------------------------------------------------------------#\n");
+	printf("....................|-------------- FINISH ----------------------------------------------------------------------------------------------------#\n");
 
 	return;
 }

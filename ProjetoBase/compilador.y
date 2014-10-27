@@ -17,6 +17,8 @@
 #define _DEBUG 1
 
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0, num_argumentos = 0;
+int bufferVetorTipo[100], bufferVetorPassagem[100];
+int paramtipo = PARAMTIPO_VALOR;
 ApontadorSimbolo procedimentoBuffer;
 Simbolo simboloBuffer;
 
@@ -61,7 +63,7 @@ int verificaTipos(char *op) {
     a = desempilha(&pilha_tipos);
     if(_DEBUG){ printf("%d...", *a); }
     b = desempilha(&pilha_tipos);
-    if(_DEBUG){ printf("%d...\n", *b); }	
+    if(_DEBUG){ printf("%d...\n", *b); }  
     if(*a != *b){
         printf("%s com tipos diferentes!\n", op);
         return 0;
@@ -142,7 +144,7 @@ bloco:      parte_declara_vars
             }
             comando_composto 
             {
-                num_vars = *(int *)desempilha(&pilha_amem_dmem);		
+                num_vars = *(int *)desempilha(&pilha_amem_dmem);    
                 char dmem[10];
                 sprintf(dmem, "DMEM %d", num_vars);
                 geraCodigo(NULL, dmem);
@@ -150,7 +152,9 @@ bloco:      parte_declara_vars
 ;
 
 parte_declara_vars:
-            var
+            var {
+                num_vars = 0;
+            }
 ;
 
 var:        VAR declara_vars
@@ -313,29 +317,68 @@ while:      {
 
 /* COMANDO: PROCEDURE */
 
-ident_param: IDENT	{
-				Simbolo a;
-				a.identificador = malloc(sizeof(token));
-				strcpy(a.identificador, token);
-				a.nivel = nivel;
-				//a->identificador = token;
-				tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
-				//printf("Adicionando simbolo a tabela\n");
-				//imprime(tabelaSimbolo);
-				num_vars++;
-				num_argumentos++;
-				
-			}
+ident_param: IDENT  {
+        Simbolo a;
+        a.identificador = malloc(sizeof(token));
+        strcpy(a.identificador, token);
+        a.nivel = nivel;
+        a.passagem = paramtipo;
+        //a->identificador = token;
+        tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
+        //printf("Adicionando simbolo a tabela\n");
+        //imprime(tabelaSimbolo);
+        num_vars++;
+        num_argumentos++; 
+      }
+
 ;
 
-lista_param_proc:	ident_param VIRGULA lista_param_proc
-		|	ident_param DOIS_PONTOS tipo	{
-								num_vars = 0;
-							}
-		|	ident_param DOIS_PONTOS tipo	{
-								num_vars = 0;
-							}
-			PONTO_E_VIRGULA lista_param_proc
+lista_param_var_proc: VAR {
+                            paramtipo = PARAMTIPO_REFER;
+                        } lista_param_proc
+                        | lista_param_proc
+;
+
+lista_param_proc: ident_param VIRGULA lista_param_proc
+    | ident_param DOIS_PONTOS tipo_param_proc  {
+                int i;
+                for (i=1; i<=num_vars; i++) {
+                     bufferVetorPassagem[num_argumentos-i] = paramtipo;
+                }
+                num_vars = 0;
+
+              }
+    | ident_param DOIS_PONTOS tipo_param_proc  {
+                int i;
+                for (i=1; i<=num_vars; i++) {
+                     bufferVetorPassagem[num_argumentos-i] = paramtipo;
+                }
+                num_vars = 0;
+                paramtipo = PARAMTIPO_VALOR;
+              }
+      PONTO_E_VIRGULA lista_param_var_proc
+;
+
+tipo_param_proc: INTEGER
+            {
+                setaTipo(tabelaSimbolo, num_vars, VARTIPO_INT);
+                bufferVetorTipo[num_argumentos-1] = VARTIPO_INT;
+            }
+          | CHAR
+            {
+                setaTipo(tabelaSimbolo, num_vars, VARTIPO_CHAR);
+                bufferVetorTipo[num_argumentos-1] = VARTIPO_CHAR;
+            }
+          | STRING 
+            {
+                setaTipo(tabelaSimbolo, num_vars, VARTIPO_STRING);
+                bufferVetorTipo[num_argumentos-1] = VARTIPO_STRING;
+            }
+          | BOOLEAN
+            {
+                setaTipo(tabelaSimbolo, num_vars, VARTIPO_BOOLEAN);
+                bufferVetorTipo[num_argumentos-1] = VARTIPO_BOOLEAN;
+            }
 ;
 
 proc_list:  proc_list proc
@@ -343,47 +386,49 @@ proc_list:  proc_list proc
           |
 ;
 
-proc:	proc_sem_arg { printf("..............................[Criando procedimento sem argumentos]\n"); }
-	PONTO_E_VIRGULA
-	bloco	{
-			char rtpr[10];
-		        sprintf(rtpr, "RTPR %d, %d", nivel, 0);
-		        geraCodigo(NULL, rtpr);
-       		}
-	PONTO_E_VIRGULA
+proc: proc_sem_arg { printf("..............................[Criando procedimento sem argumentos]\n"); }
+  PONTO_E_VIRGULA
+  bloco {
+      char rtpr[10];
+            sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+            geraCodigo(NULL, rtpr);
+          }
+  PONTO_E_VIRGULA
       | proc_sem_arg { printf("..............................[Criando procedimento com argumentos]\n"); }
-	ABRE_PARENTESES
-	lista_param_proc	{
-					/* insere vars na tabela de símbolos */
-					ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
-					if(a != NULL) {
-					    char armz[10];
-					    sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
-					    geraCodigo(NULL, "LEIT");
-					    geraCodigo(NULL, armz);
-					} else {
-					    sprintf(erro, "Variavel '%s' nao foi declarada!", token);
-					    Erro(erro);
-					    return;
-					}
-					a->n_args = num_argumentos;
-					setaDeslocamento(tabelaSimbolo, num_argumentos, -4);
-					
-				}
-	FECHA_PARENTESES
-	PONTO_E_VIRGULA
-	bloco	{
-		char rtpr[10];
-		sprintf(rtpr, "RTPR %d, %d", nivel, 0);
-		geraCodigo(NULL, rtpr);
-	}
-	PONTO_E_VIRGULA
+  ABRE_PARENTESES {
+    paramtipo = PARAMTIPO_VALOR;
+  }
+  lista_param_var_proc  {
+            /* insere vars na tabela de símbolos */
+            ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+            alterarNumeroArgumentos(a, num_argumentos, bufferVetorTipo, bufferVetorPassagem);
+            setaDeslocamento(tabelaSimbolo, num_argumentos, -4);
+            int k;
+            printf("Vetor tipo:");
+            for(k=0;k<10;k++) {
+                printf("%3d", bufferVetorTipo[k]);
+            }
+            printf("\n");
+            printf("Vetor passagem:");
+            for(k=0;k<10;k++) {
+                printf("%3d", bufferVetorPassagem[k]);
+            }
+            printf("\n");
+        }
+  FECHA_PARENTESES
+  PONTO_E_VIRGULA
+  bloco {
+    char rtpr[10];
+    sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+    geraCodigo(NULL, rtpr);
+  }
+  PONTO_E_VIRGULA
 ;
 
 proc_sem_arg:
             PROCEDURE IDENT
             {
-		num_argumentos = 0;
+                num_argumentos = 0;
                 deslocamento = 0;
 
                 Simbolo a;
@@ -391,7 +436,7 @@ proc_sem_arg:
                 strcpy(a.identificador, token);
                 a.deslocamento = deslocamento;
                 a.nivel = nivel;
-		a.n_args = 0;
+    a.n_args = 0;
 
                 char inpr[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -400,8 +445,8 @@ proc_sem_arg:
                 sprintf(inpr, "INPR %d", nivel);
                 geraCodigo(s_rotulo, inpr);
 
-		simboloBuffer = a;
-		tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
+    simboloBuffer = a;
+    tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
                 //strcpy(a.rotulo, s_rotulo);
                 //printf("Adicionando simbolo a tabela\n");
                 //imprime(tabelaSimbolo);
@@ -450,7 +495,7 @@ read:       READ ABRE_PARENTESES IDENT
                 } else {
                     sprintf(erro, "Variavel '%s' nao foi declarada!", token);
                     Erro(erro);
-                    return;
+                    return 1;
                 }
             }
             FECHA_PARENTESES
@@ -464,8 +509,8 @@ proc_atribuicao:
             proc_ou_atrib
 ;
 
-proc_ou_atrib:	atribuicao
-          |	chama_proc
+proc_ou_atrib:  atribuicao
+          | chama_proc
 ;
 
 atribuicao: ATRIBUICAO expr
@@ -484,66 +529,66 @@ atribuicao: ATRIBUICAO expr
                     // Checa valor da pilha de valores
                     if(*valor_pilha != a->tipo){
                         printf("Tipo errado!\n");
-                        return;
+                        return 1;
                     }
                     sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
                     geraCodigo(NULL, armz);
                 } else {
                     sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
                     Erro(erro);
-                    return;
+                    return 1;
                 }
             }
 ;
 
 /* COMANDO: CHAMADA DE PROCEDIMENTO */
 
-lista_vals_chama_proc:	numero VIRGULA lista_vals_chama_proc { num_argumentos++; }
-		|	ident VIRGULA lista_vals_chama_proc { num_argumentos++; }
-		|	numero { num_argumentos++; }
-		|	ident { num_argumentos++; }
-		|
+lista_vals_chama_proc:  numero { num_argumentos++; } VIRGULA lista_vals_chama_proc
+    | ident_proc { num_argumentos++; } VIRGULA lista_vals_chama_proc
+    | numero { num_argumentos++; }
+    | ident_proc { num_argumentos++; }
+    |
 ;
 
-chama_proc: 	chama_proc_sem_arg	{
-						printf("..............................[Procedimento sem parametros]\n");
-						if(procedimentoBuffer->n_args == 0){
-							printf("..............................[Numero ccorreto de argumentos]\n");
-							char cmpr[10];
-							sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
-							geraCodigo(NULL, cmpr);
-						} else {
-							printf("..............................[Numero IINcorreto de argumentos]\n");
-						}
-					}
-	| 	chama_proc_sem_arg 	{
-						printf("..............................[Procedimento com parametros]\n");
-					}
-		 ABRE_PARENTESES
-		lista_vals_chama_proc	{
-						if(_DEBUG){ printf("..............................[Numero de argumentos] %d\n", num_argumentos); }
-						ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
-						if(a != NULL) {
-							if(a->n_args == num_argumentos) {
-								printf("..............................[Numero correto de argumentos]\n");
-								char cmpr[10];
-								sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
-								geraCodigo(NULL, cmpr);
-							} else {
-								printf("..............................[Numero INcorreto de argumentos]\n");
-							}
-						} else {
-						    sprintf(erro, "Procedimento '%s' nao foi declarada!", token);
-						    Erro(erro);
-						    return;
-						}
-						num_argumentos = 0;
-					}
-		FECHA_PARENTESES
+chama_proc:   chama_proc_sem_arg  {
+            printf("..............................[Procedimento sem parametros]\n");
+            if(procedimentoBuffer->n_args == 0){
+              printf("..............................[Numero ccorreto de argumentos]\n");
+              char cmpr[10];
+              sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
+              geraCodigo(NULL, cmpr);
+            } else {
+              printf("..............................[Numero IINcorreto de argumentos]\n");
+            }
+          }
+  |   chama_proc_sem_arg  {
+            printf("..............................[Procedimento com parametros]\n");
+          }
+     ABRE_PARENTESES
+    lista_vals_chama_proc {
+            if(_DEBUG){ printf("..............................[Numero de argumentos] %d\n", num_argumentos); }
+            ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+            if(a != NULL) {
+              if(a->n_args == num_argumentos) {
+                printf("..............................[Numero correto de argumentos]\n");
+                char cmpr[10];
+                sprintf(cmpr, "CHPR %s, %d", procedimentoBuffer->rotulo, nivel);
+                geraCodigo(NULL, cmpr);
+              } else {
+                printf("..............................[Numero INcorreto de argumentos]\n");
+              }
+            } else {
+                sprintf(erro, "Procedimento '%s' nao foi declarada!", token);
+                Erro(erro);
+                return 1;
+            }
+            num_argumentos = 0;
+          }
+    FECHA_PARENTESES
 ;
 
 chama_proc_sem_arg: {
-		num_argumentos = 0;
+                num_argumentos = 0;
                 printf("..............................[Procurando pelo procedimento] %s\n", temp);
                 ApontadorSimbolo a = busca(temp, tabelaSimbolo);
                 if(a != NULL) {
@@ -551,108 +596,166 @@ chama_proc_sem_arg: {
                 } else {
                     sprintf(erro, "Procedimento '%s' nao foi declarado!", temp);
                     Erro(erro);
-                    return;
+                    return 1;
                 }
             }
+;
+
+ident_proc      : IDENT
+                {
+                      ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                      if(a != NULL) {
+                        // Empilha na pilha de tipos
+                        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
+                        int tipo_tmp = a->tipo;
+
+                        // Busca funcao
+                        ApontadorSimbolo b = busca(temp, tabelaSimbolo);
+                        if(b->tiposParam[num_argumentos] != a->tipo) {
+                            printf("O parametro %s nao e o tipo esperado.\n", token);
+                            return 1;
+                        }
+                        printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d\n", a->identificador, num_argumentos);
+                        if(a->categoria == OPT_variavelSimples) {
+                            if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
+                                char crvl[10];
+                                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                char crvl[10];
+                                sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            }
+                        } else if(a->categoria == OPT_ParametroFormal) {
+                            if(a->passagem == PARAMTIPO_VALOR) {
+                                if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                }
+                            } else if(a->passagem == PARAMTIPO_REFER) {
+                                if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVI %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                }
+
+                            }
+                        }
+                        
+                        
+                      } else {
+                        printf("Variavel %s nao declarada.\n", token);
+                        return 1;
+                      }
+                }
 ;
 
 boolexpr:   expr
           | expr IGUAL expr
             {
-				if (verificaTipos("IGUAL")) {
-                                	geraCodigo(NULL, "CMIG");
-				} else {
-					return;				
-				}
+        if (verificaTipos("IGUAL")) {
+                                  geraCodigo(NULL, "CMIG");
+        } else {
+          return 1;       
+        }
                         } |
                 expr DIFERENTE expr {
-				if (verificaTipos("DIFERENTE")) {
-                                	geraCodigo(NULL, "CMDG");
-				} else {
-					return;				
-				}
+        if (verificaTipos("DIFERENTE")) {
+                                  geraCodigo(NULL, "CMDG");
+        } else {
+          return 1;       
+        }
                         } | 
                 expr MENOR expr {
-				if (verificaTipos("MENOR")) {
-                                	geraCodigo(NULL, "CMME");
-				} else {
-					return;				
-				}
+        if (verificaTipos("MENOR")) {
+                                  geraCodigo(NULL, "CMME");
+        } else {
+          return 1;       
+        }
                         } | 
                 expr MAIOR expr {
-				if (verificaTipos("MAIOR")) {
-                                	geraCodigo(NULL, "CMMA");
-				} else {
-					return;				
-				}
+        if (verificaTipos("MAIOR")) {
+                                  geraCodigo(NULL, "CMMA");
+        } else {
+          return 1;       
+        }
                         } | 
                 expr MENOR_IGUAL expr {
-				if (verificaTipos("MENOR_IGUAL")) {
-                                	geraCodigo(NULL, "CMEG");
-				} else {
-					return;				
-				}
+        if (verificaTipos("MENOR_IGUAL")) {
+                                  geraCodigo(NULL, "CMEG");
+        } else {
+          return 1;       
+        }
                         } | 
                 expr MAIOR_IGUAL expr {
-				if (verificaTipos("MAIOR_IGUAL")) {
-                                	geraCodigo(NULL, "CMAG");
-				} else {
-					return;				
-				}
+        if (verificaTipos("MAIOR_IGUAL")) {
+                                  geraCodigo(NULL, "CMAG");
+        } else {
+          return 1;       
+        }
                         }
 ;
 
 expr       :    expr MAIS termo 
                 {
-			if (verificaTipos("ADICAO")) {
-                        	geraCodigo(NULL, "SOMA");
-			} else {
-				return;				
-			}
+      if (verificaTipos("ADICAO")) {
+                          geraCodigo(NULL, "SOMA");
+      } else {
+        return 1;       
+      }
                 } |
                 expr MENOS termo
                 {
-			if (verificaTipos("SUBTRACAO")) {
-                        	geraCodigo(NULL, "SUBT");
-			} else {
-				return;				
-			}
+      if (verificaTipos("SUBTRACAO")) {
+                          geraCodigo(NULL, "SUBT");
+      } else {
+        return 1;       
+      }
 
                 }  | 
                 expr OR termo
                 {
-			if (verificaTipos("OR")) {
-                        	geraCodigo(NULL, "DISJ");
-			} else {
-				return;				
-			}
+      if (verificaTipos("OR")) {
+                          geraCodigo(NULL, "DISJ");
+      } else {
+        return 1;       
+      }
                 } |
                 termo
 ;
 
 termo         : termo ASTERISCO val
                 {
-			if (verificaTipos("MULTIPLICACAO")) {
-                        	geraCodigo(NULL, "MULT");
-			} else {
-				return;				
-			}
+      if (verificaTipos("MULTIPLICACAO")) {
+                          geraCodigo(NULL, "MULT");
+      } else {
+        return 1;       
+      }
                 }  | 
                 termo DIV val 
                 {
-			if (verificaTipos("DIVISAO")) {
-                        	geraCodigo(NULL, "DIVI");
-			} else {
-				return;				
-			}
+      if (verificaTipos("DIVISAO")) {
+                          geraCodigo(NULL, "DIVI");
+      } else {
+        return 1;       
+      }
                 } | 
                 termo AND val
                 {
-			if (verificaTipos("AND")) {
-                        	geraCodigo(NULL, "CONJ");
-			} else {
-				return;				
-			}
+      if (verificaTipos("AND")) {
+                          geraCodigo(NULL, "CONJ");
+      } else {
+        return 1;       
+      }
                 } |
                 val
 ;
@@ -672,29 +775,29 @@ val        :    ABRE_PARENTESES expr FECHA_PARENTESES |
 ident      : IDENT
                 {
                         ApontadorSimbolo a = busca(token, tabelaSimbolo);
-			if(a != NULL) {
-				// Empilha na pilha de tipos
-				if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
-				int tipo_tmp = a->tipo;
-				empilhaTipo(&pilha_tipos, tipo_tmp);
+      if(a != NULL) {
+        // Empilha na pilha de tipos
+        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
+        int tipo_tmp = a->tipo;
+        empilhaTipo(&pilha_tipos, tipo_tmp);
 
-				char crvl[10];
-				sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-				geraCodigo(NULL, crvl);
-			} else {
-				printf("Variavel %s nao declarada.\n", token);
-				return;
-			}
+        char crvl[10];
+        sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+        geraCodigo(NULL, crvl);
+      } else {
+        printf("Variavel %s nao declarada.\n", token);
+        return 1;
+      }
                 }
 ;
 numero     : NUMERO {
-			// Empilha na pilha de tipos
-			if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 0)\n"); }
-			int i;
-			i = VARTIPO_INT;	
-			empilhaTipo(&pilha_tipos, i);
+      // Empilha na pilha de tipos
+      if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 0)\n"); }
+      int i;
+      i = VARTIPO_INT;  
+      empilhaTipo(&pilha_tipos, i);
                         
-			char crct[10];
+      char crct[10];
                         sprintf(crct, "CRCT %s", token);
                         geraCodigo(NULL, crct);
                 }
