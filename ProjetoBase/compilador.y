@@ -81,7 +81,7 @@ int verificaTipos(char *op) {
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
-%token PROCEDURE
+%token PROCEDURE FUNCTION
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -384,6 +384,8 @@ tipo_param_proc: INTEGER
 
 proc_list:  proc_list proc
           | proc
+          | proc_list func
+          | func
           |
 ;
 
@@ -420,7 +422,7 @@ proc: proc_sem_arg { printf("..............................[Criando procedimento
   PONTO_E_VIRGULA
   bloco {
     char rtpr[10];
-    sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+    sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
     geraCodigo(NULL, rtpr);
   }
   PONTO_E_VIRGULA
@@ -437,7 +439,7 @@ proc_sem_arg:
                 strcpy(a.identificador, token);
                 a.deslocamento = deslocamento;
                 a.nivel = nivel;
-    a.n_args = 0;
+                a.n_args = 0;
 
                 char inpr[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -446,8 +448,97 @@ proc_sem_arg:
                 sprintf(inpr, "INPR %d", nivel);
                 geraCodigo(s_rotulo, inpr);
 
-    simboloBuffer = a;
-    tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
+                simboloBuffer = a;
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
+                //strcpy(a.rotulo, s_rotulo);
+                //printf("Adicionando simbolo a tabela\n");
+                //imprime(tabelaSimbolo);
+                num_vars++;
+            }
+;
+
+/* FUNCTION */
+
+func: func_sem_arg { printf("..............................[Criando funcao sem argumentos]\n"); }
+  DOIS_PONTOS tipo_func PONTO_E_VIRGULA
+  bloco {
+            char rtpr[10];
+            sprintf(rtpr, "RTPR %d, %d", nivel, 0);
+            geraCodigo(NULL, rtpr);
+          }
+  PONTO_E_VIRGULA
+      | func_sem_arg { printf("..............................[Criando funcao com argumentos]\n"); }
+  ABRE_PARENTESES {
+    paramtipo = PARAMTIPO_VALOR;
+  }
+  lista_param_var_proc  {
+            /* insere vars na tabela de símbolos */
+            ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+            alterarNumeroArgumentos(a, num_argumentos, bufferVetorTipo, bufferVetorPassagem);
+            setaDeslocamento(tabelaSimbolo, num_argumentos, -4);
+        }
+  FECHA_PARENTESES DOIS_PONTOS tipo_func
+  PONTO_E_VIRGULA
+  bloco {
+    char rtpr[10];
+    sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
+    geraCodigo(NULL, rtpr);
+  }
+  PONTO_E_VIRGULA
+;
+
+tipo_func: INTEGER      {
+                                ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+                                if(a != NULL) {
+                                    a->tipo = VARTIPO_INT;
+                                    a->deslocamento = - num_argumentos - 4;
+                                }
+                        }
+          | CHAR        {
+                                ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+                                if(a != NULL) {
+                                    a-> tipo = VARTIPO_CHAR;
+                                    a->deslocamento = - num_argumentos - 4;
+                                }
+                        }
+          | STRING      {
+                                ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+                                if(a != NULL) {
+                                    a-> tipo = VARTIPO_STRING;
+                                    a->deslocamento = - num_argumentos - 4;
+                                }
+                        }
+          | BOOLEAN     {
+                                ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+                                if(a != NULL) {
+                                    a-> tipo = VARTIPO_BOOLEAN;
+                                    a->deslocamento = - num_argumentos - 4;
+                                }
+                        }
+;
+
+func_sem_arg:
+            FUNCTION IDENT
+            {
+                num_argumentos = 0;
+                deslocamento = 0;
+
+                Simbolo a;
+                a.identificador = malloc(sizeof(token));
+                strcpy(a.identificador, token);
+                a.deslocamento = deslocamento;
+                a.nivel = nivel;
+                a.n_args = 0;
+
+                char inpr[10];
+                imprimeRotulo(proxRotulo(), s_rotulo);
+                a.rotulo = malloc(sizeof(s_rotulo));
+                strcpy(a.rotulo, s_rotulo);
+                sprintf(inpr, "INPR %d", nivel);
+                geraCodigo(s_rotulo, inpr);
+
+                simboloBuffer = a;
+                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Procedimento);
                 //strcpy(a.rotulo, s_rotulo);
                 //printf("Adicionando simbolo a tabela\n");
                 //imprime(tabelaSimbolo);
@@ -485,6 +576,8 @@ lista_vals_write:
             }
 ;
 
+/* COMANDO: READ */
+
 read:       READ ABRE_PARENTESES IDENT 
             {
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
@@ -501,6 +594,8 @@ read:       READ ABRE_PARENTESES IDENT
             }
             FECHA_PARENTESES
 ;
+
+/* ATRIBUICAO */
 
 proc_atribuicao:
             IDENT
@@ -560,6 +655,7 @@ chama_proc:   chama_proc_sem_arg  {
               geraCodigo(NULL, cmpr);
             } else {
               printf("..............................[Numero IINcorreto de argumentos]\n");
+              return 1;
             }
           }
   |   chama_proc_sem_arg  {
@@ -577,6 +673,7 @@ chama_proc:   chama_proc_sem_arg  {
                 geraCodigo(NULL, cmpr);
               } else {
                 printf("..............................[Numero INcorreto de argumentos]\n");
+                return 1;
               }
             } else {
                 sprintf(erro, "Procedimento '%s' nao foi declarada!", token);
@@ -594,6 +691,9 @@ chama_proc_sem_arg: {
                 ApontadorSimbolo a = busca(temp, tabelaSimbolo);
                 if(a != NULL) {
                     procedimentoBuffer = a;
+                    if(a->deslocamento != 0) {
+                        geraCodigo(NULL, "AMEM 1");
+                    }
                 } else {
                     sprintf(erro, "Procedimento '%s' nao foi declarado!", temp);
                     Erro(erro);

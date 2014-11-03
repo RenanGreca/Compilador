@@ -113,6 +113,11 @@ procedure {simbolo = simb_proc;
 	  strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("procedure ");
           return PROCEDURE;}
+          
+function {simbolo = simb_func;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("procedure ");
+          return FUNCTION;}
 
 := { simbolo = simb_atribuicao;  
           strncpy (token, yytext, TAM_TOKEN);

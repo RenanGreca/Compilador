@@ -9,7 +9,7 @@ program escopoProc (input, output);
         var z: integer;
         begin
 		  write(x);
-          k(b);
+          k(y);
         end;
     begin
         p(1, x);
