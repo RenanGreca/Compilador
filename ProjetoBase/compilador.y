@@ -22,7 +22,7 @@ int paramtipo = PARAMTIPO_VALOR;
 ApontadorSimbolo procedimentoBuffer;
 Simbolo simboloBuffer;
 
-char temp[100], temp_if[100], erro[100], s_rotulo[10];
+char temp[100], temp_if[100], erro[100], s_rotulo[10], nome_proc[100];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
@@ -606,7 +606,7 @@ proc_atribuicao:
 ;
 
 proc_ou_atrib:  atribuicao
-          | chama_proc
+          | { strcpy(nome_proc, temp); }chama_proc
 ;
 
 atribuicao: ATRIBUICAO expr
@@ -639,10 +639,8 @@ atribuicao: ATRIBUICAO expr
 
 /* COMANDO: CHAMADA DE PROCEDIMENTO */
 
-lista_vals_chama_proc:  numero { num_argumentos++; } VIRGULA lista_vals_chama_proc
-    | ident_proc { num_argumentos++; } VIRGULA lista_vals_chama_proc
-    | numero { num_argumentos++; }
-    | ident_proc { num_argumentos++; }
+lista_vals_chama_proc:  expr { num_argumentos++; } VIRGULA lista_vals_chama_proc
+    | expr { num_argumentos++; }
     |
 ;
 
@@ -663,6 +661,7 @@ chama_proc:   chama_proc_sem_arg  {
           }
      ABRE_PARENTESES
     lista_vals_chama_proc {
+            nome_proc[0] = 0;
             if(_DEBUG){ printf("..............................[Numero de argumentos] %d\n", num_argumentos); }
             ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
             if(a != NULL) {
@@ -875,20 +874,94 @@ val        :    ABRE_PARENTESES expr FECHA_PARENTESES |
 
 ident      : IDENT
                 {
-                        ApontadorSimbolo a = busca(token, tabelaSimbolo);
-      if(a != NULL) {
-        // Empilha na pilha de tipos
-        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
-        int tipo_tmp = a->tipo;
-        empilhaTipo(&pilha_tipos, tipo_tmp);
+                    ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                      if(a != NULL) {
+                        // Empilha na pilha de tipos
+                        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d) %s\n", a->identificador, a->tipo, nome_proc); }
+                        int tipo_tmp = a->tipo;
 
-        char crvl[10];
-        sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-        geraCodigo(NULL, crvl);
-      } else {
-        printf("Variavel %s nao declarada.\n", token);
-        return 1;
-      }
+                        // Busca funcao
+                        int tipo_passagem_b = PARAMTIPO_VALOR;
+                        ApontadorSimbolo b = busca(nome_proc, tabelaSimbolo);
+                        if (b != NULL) {
+                            // o identificador está dentro de uma chamada de procedimento
+                            tipo_passagem_b = b->passagemParam[num_argumentos];
+                            if(b->tiposParam[num_argumentos] != a->tipo) {
+                                printf("O parametro %s nao e o tipo esperado.\n", token);
+                                return 1;
+                            }
+                        } else {
+                            empilhaTipo(&pilha_tipos, tipo_tmp);
+                        }
+                        
+                        //printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d PASSAGEM: %d\n", a->identificador, num_argumentos, a->passagem);
+                        if(a->categoria == OPT_variavelSimples) {
+                            if(tipo_passagem_b == PARAMTIPO_VALOR) {
+                                char crvl[10];
+                                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                char crvl[10];
+                                sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            }
+                        } else if(a->categoria == OPT_ParametroFormal) {
+                            if(a->passagem == PARAMTIPO_VALOR) {
+                                if(tipo_passagem_b == PARAMTIPO_VALOR) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                }
+                            } else if(a->passagem == PARAMTIPO_REFER) {
+                                if(tipo_passagem_b == PARAMTIPO_VALOR) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVI %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
+                                    char crvl[10];
+                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    geraCodigo(NULL, crvl);
+                                }
+
+                            }
+                        }
+                        
+                        
+                      } else {
+                        printf("Variavel %s nao declarada.\n", token);
+                        return 1;
+                      }
+                    /*ApontadorSimbolo a = busca(token, tabelaSimbolo);
+                      if(a != NULL) {
+                        // Empilha na pilha de tipos
+                        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
+                        int tipo_tmp = a->tipo;
+                        empilhaTipo(&pilha_tipos, tipo_tmp);
+
+                        if(a->categoria == OPT_variavelSimples) {
+                            char crvl[10];
+                            sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                            geraCodigo(NULL, crvl);
+                        } else if(a->categoria == OPT_ParametroFormal) {
+                            if(a->passagem == PARAMTIPO_VALOR) {
+                                char crvl[10];
+                                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            } else if(a->passagem == PARAMTIPO_REFER) {
+                                char crvl[10];
+                                sprintf(crvl, "CRVI %d,%d", a->nivel, a->deslocamento);
+                                geraCodigo(NULL, crvl);
+                            }
+                        }
+
+                      } else {
+                        printf("Variavel %s nao declarada.\n", token);
+                        return 1;
+                      }*/
                 }
 ;
 numero     : NUMERO {
