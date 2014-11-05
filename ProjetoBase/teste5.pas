@@ -1,6 +1,6 @@
 program proc2(input, output);
     var x,y: integer;
-    function p(t:integer): integer;
+    function p(var t:integer): integer;
         var z:integer;
         begin
             if (t>1)

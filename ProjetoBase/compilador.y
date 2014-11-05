@@ -19,6 +19,7 @@
 int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0, num_argumentos = 0;
 int bufferVetorTipo[100], bufferVetorPassagem[100];
 int paramtipo = PARAMTIPO_VALOR;
+int is_expr = 0;
 ApontadorSimbolo procedimentoBuffer;
 Simbolo simboloBuffer;
 
@@ -639,8 +640,8 @@ atribuicao: ATRIBUICAO expr
 
 /* COMANDO: CHAMADA DE PROCEDIMENTO */
 
-lista_vals_chama_proc:  expr { num_argumentos++; } VIRGULA lista_vals_chama_proc
-    | expr { num_argumentos++; }
+lista_vals_chama_proc:  expr { num_argumentos++; is_expr = 0; } VIRGULA lista_vals_chama_proc
+    | expr { num_argumentos++; is_expr = 0; }
     |
 ;
 
@@ -658,6 +659,7 @@ chama_proc:   chama_proc_sem_arg  {
           }
   |   chama_proc_sem_arg  {
             printf("..............................[Procedimento com parametros]\n");
+            is_expr = 0;
           }
      ABRE_PARENTESES
     lista_vals_chama_proc {
@@ -699,64 +701,6 @@ chama_proc_sem_arg: {
                     return 1;
                 }
             }
-;
-
-ident_proc      : IDENT
-                {
-                      ApontadorSimbolo a = busca(token, tabelaSimbolo);
-                      if(a != NULL) {
-                        // Empilha na pilha de tipos
-                        if(_DEBUG){ printf("..............................[Empilhando] %s (tipo: %d)\n", a->identificador, a->tipo); }
-                        int tipo_tmp = a->tipo;
-
-                        // Busca funcao
-                        ApontadorSimbolo b = busca(temp, tabelaSimbolo);
-                        if(b->tiposParam[num_argumentos] != a->tipo) {
-                            printf("O parametro %s nao e o tipo esperado.\n", token);
-                            return 1;
-                        }
-                        printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d PASSAGEM: %d\n", a->identificador, num_argumentos, a->passagem);
-                        if(a->categoria == OPT_variavelSimples) {
-                            if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
-                                char crvl[10];
-                                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                                geraCodigo(NULL, crvl);
-                            } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
-                                char crvl[10];
-                                sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
-                                geraCodigo(NULL, crvl);
-                            }
-                        } else if(a->categoria == OPT_ParametroFormal) {
-                            if(a->passagem == PARAMTIPO_VALOR) {
-                                if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
-                                    char crvl[10];
-                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                                    geraCodigo(NULL, crvl);
-                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
-                                    char crvl[10];
-                                    sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
-                                    geraCodigo(NULL, crvl);
-                                }
-                            } else if(a->passagem == PARAMTIPO_REFER) {
-                                if(b->passagemParam[num_argumentos] == PARAMTIPO_VALOR) {
-                                    char crvl[10];
-                                    sprintf(crvl, "CRVI %d,%d", a->nivel, a->deslocamento);
-                                    geraCodigo(NULL, crvl);
-                                } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
-                                    char crvl[10];
-                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
-                                    geraCodigo(NULL, crvl);
-                                }
-
-                            }
-                        }
-                        
-                        
-                      } else {
-                        printf("Variavel %s nao declarada.\n", token);
-                        return 1;
-                      }
-                }
 ;
 
 boolexpr:   expr
@@ -805,7 +749,7 @@ boolexpr:   expr
                         }
 ;
 
-expr       :    expr MAIS termo 
+expr       :    expr MAIS { is_expr = 1; } termo 
                 {
       if (verificaTipos("ADICAO")) {
                           geraCodigo(NULL, "SOMA");
@@ -813,7 +757,7 @@ expr       :    expr MAIS termo
         return 1;       
       }
                 } |
-                expr MENOS termo
+                expr MENOS { is_expr = 1; } termo
                 {
       if (verificaTipos("SUBTRACAO")) {
                           geraCodigo(NULL, "SUBT");
@@ -822,7 +766,7 @@ expr       :    expr MAIS termo
       }
 
                 }  | 
-                expr OR termo
+                expr OR { is_expr = 1; } termo
                 {
       if (verificaTipos("OR")) {
                           geraCodigo(NULL, "DISJ");
@@ -833,7 +777,7 @@ expr       :    expr MAIS termo
                 termo
 ;
 
-termo         : termo ASTERISCO val
+termo         : termo ASTERISCO { is_expr = 1; } val
                 {
       if (verificaTipos("MULTIPLICACAO")) {
                           geraCodigo(NULL, "MULT");
@@ -841,7 +785,7 @@ termo         : termo ASTERISCO val
         return 1;       
       }
                 }  | 
-                termo DIV val 
+                termo DIV { is_expr = 1; } val 
                 {
       if (verificaTipos("DIVISAO")) {
                           geraCodigo(NULL, "DIVI");
@@ -849,7 +793,7 @@ termo         : termo ASTERISCO val
         return 1;       
       }
                 } | 
-                termo AND val
+                termo AND { is_expr = 1; } val
                 {
       if (verificaTipos("AND")) {
                           geraCodigo(NULL, "CONJ");
@@ -886,6 +830,10 @@ ident      : IDENT
                         if (b != NULL) {
                             // o identificador está dentro de uma chamada de procedimento
                             tipo_passagem_b = b->passagemParam[num_argumentos];
+                            if ((b->passagemParam[num_argumentos] == PARAMTIPO_REFER) && (is_expr == 1)) {
+                                printf("Imposs(esseicomacentovaidarmerda)vel passar expr por refer na chamada de procedimento %s\n", nome_proc);
+                                return 1;
+                            }
                             if(b->tiposParam[num_argumentos] != a->tipo) {
                                 printf("O parametro %s nao e o tipo esperado.\n", token);
                                 return 1;
