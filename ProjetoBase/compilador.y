@@ -27,7 +27,7 @@ char temp[100], temp_if[100], erro[100], s_rotulo[10], nome_proc[100];
 // Instancia TABELA DE SIMBOLOS
 ApontadorSimbolo tabelaSimbolo = NULL;
 // Instancia PILHA
-PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs;
+PilhaT pilha_rot, pilha_tipos, pilha_amem_dmem, pilha_simbs, pilha_proc;
 
 /* Empilha numero de vars locais para posterior DMEM */
 #define empilhaAMEM(n_vars) temp_num = malloc (sizeof (int)); *temp_num = n_vars; empilha(&pilha_amem_dmem, temp_num);
@@ -82,7 +82,7 @@ int verificaTipos(char *op) {
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
-%token PROCEDURE FUNCTION
+%token PROCEDURE FUNCTION LABEL
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -117,7 +117,7 @@ programa:   {
             }
 ;
 
-bloco:      parte_declara_vars 
+bloco:      parte_declaracao 
             {
                 // Empilha rótulo de entrada do procedimento
                 int *i = malloc(sizeof(int));
@@ -152,6 +152,13 @@ bloco:      parte_declara_vars
             }
 ;
 
+parte_declaracao:  parte_declaracao parte_declara_vars
+          | parte_declara_vars
+          | parte_declaracao parte_declara_labels
+          | parte_declara_labels
+          |
+;
+
 parte_declara_vars:
             var {
                 num_vars = 0;
@@ -159,7 +166,6 @@ parte_declara_vars:
 ;
 
 var:        VAR declara_vars
-          |
 ;
 
 declara_vars:
@@ -181,6 +187,26 @@ declara_var:
                 geraCodigo (NULL, amem);
             }
             PONTO_E_VIRGULA
+;
+
+parte_declara_labels: LABEL declara_labels
+;
+
+declara_labels:
+            declara_label VIRGULA declara_labels 
+          | declara_label PONTO_E_VIRGULA
+;
+
+declara_label: NUMERO {
+                    /* insere última vars na tabela de símbolos */
+                    Simbolo a;
+                    a.identificador = malloc(sizeof(token));
+                    strcpy(a.identificador, token);
+                    a.deslocamento = 0;
+                    a.nivel = nivel;
+                    /* insere vars na tabela de símbolos */
+                    tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Rotulo);
+                }
 ;
 
 tipo:       INTEGER
@@ -396,6 +422,10 @@ proc: proc_sem_arg { printf("..............................[Criando procedimento
       char rtpr[10];
             sprintf(rtpr, "RTPR %d, %d", nivel, 0);
             geraCodigo(NULL, rtpr);
+            char* nome_proc_pilha;
+            nome_proc_pilha = desempilha(&pilha_proc);
+            printf("..............................Desempilhando procedimento %s\n", nome_proc_pilha);
+            tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
           }
   PONTO_E_VIRGULA
       | proc_sem_arg { printf("..............................[Criando procedimento com argumentos]\n"); }
@@ -425,6 +455,10 @@ proc: proc_sem_arg { printf("..............................[Criando procedimento
     char rtpr[10];
     sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
     geraCodigo(NULL, rtpr);
+    char* nome_proc_pilha;
+    nome_proc_pilha = desempilha(&pilha_proc);
+    printf("..............................Desempilhando procedimento %s\n", nome_proc_pilha);
+    tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
   }
   PONTO_E_VIRGULA
 ;
@@ -432,6 +466,7 @@ proc: proc_sem_arg { printf("..............................[Criando procedimento
 proc_sem_arg:
             PROCEDURE IDENT
             {
+
                 num_argumentos = 0;
                 deslocamento = 0;
 
@@ -441,6 +476,8 @@ proc_sem_arg:
                 a.deslocamento = deslocamento;
                 a.nivel = nivel;
                 a.n_args = 0;
+                
+                empilha(&pilha_proc, a.identificador);
 
                 char inpr[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -466,6 +503,10 @@ func: func_sem_arg { printf("..............................[Criando funcao sem a
             char rtpr[10];
             sprintf(rtpr, "RTPR %d, %d", nivel, 0);
             geraCodigo(NULL, rtpr);
+            char* nome_proc_pilha;
+            nome_proc_pilha = desempilha(&pilha_proc);
+            printf("..............................Desempilhando funcao %s\n", nome_proc_pilha);
+            tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
           }
   PONTO_E_VIRGULA
       | func_sem_arg { printf("..............................[Criando funcao com argumentos]\n"); }
@@ -484,6 +525,10 @@ func: func_sem_arg { printf("..............................[Criando funcao sem a
     char rtpr[10];
     sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
     geraCodigo(NULL, rtpr);
+    char* nome_proc_pilha;
+    nome_proc_pilha = desempilha(&pilha_proc);
+    printf("..............................Desempilhando funcao %s\n", nome_proc_pilha);
+    tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
   }
   PONTO_E_VIRGULA
 ;
@@ -530,6 +575,8 @@ func_sem_arg:
                 a.deslocamento = deslocamento;
                 a.nivel = nivel;
                 a.n_args = 0;
+                
+                empilha(&pilha_proc, a.identificador);
 
                 char inpr[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -831,7 +878,7 @@ ident      : IDENT
                             // o identificador está dentro de uma chamada de procedimento
                             tipo_passagem_b = b->passagemParam[num_argumentos];
                             if ((b->passagemParam[num_argumentos] == PARAMTIPO_REFER) && (is_expr == 1)) {
-                                printf("Imposs(esseicomacentovaidarmerda)vel passar expr por refer na chamada de procedimento %s\n", nome_proc);
+                                printf("Impossivel passar expr por refer na chamada de procedimento %s\n", nome_proc);
                                 return 1;
                             }
                             if(b->tiposParam[num_argumentos] != a->tipo) {

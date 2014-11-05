@@ -1,7 +1,8 @@
 // Tipo de itens na tabela de simbolos
 #define 	OPT_variavelSimples 	0
 #define 	OPT_ParametroFormal 	1
-#define 	OPT_Procedimento 	2
+#define 	OPT_Procedimento 	    2
+#define     OPT_Rotulo              3
 
 #define		VARTIPO_INT 		0
 #define		VARTIPO_CHAR		1
@@ -35,7 +36,7 @@ typedef struct Simbolo {
 ApontadorSimbolo insere(Simbolo simbolo, ApontadorSimbolo topo, int categoria);
 
 // Retira simbolo da tabela
-void retira(ApontadorSimbolo* topo, int index);
+ApontadorSimbolo retira(ApontadorSimbolo topo, char* identificador);
 
 // Busca simbolo na tabela
 ApontadorSimbolo busca(char* nome, ApontadorSimbolo topo);

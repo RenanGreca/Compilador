@@ -1,5 +1,7 @@
 program proc2(input, output);
     var x,y: integer;
+    label 1213,2345235;
+    label 1234;
     function p(var t:integer): integer;
         var z:integer;
         begin

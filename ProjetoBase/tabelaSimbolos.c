@@ -36,13 +36,8 @@ void alterarNumeroArgumentos(ApontadorSimbolo procedure, int nArgumentos, int *v
 }
 
 // Retira simbolo da tabela
-void retira(ApontadorSimbolo* topo, int index) {
-	int i=0;
-
-	while(i<index) {
-		*topo = ((ApontadorSimbolo) *topo)->proximo;
-		i++;
-	}
+ApontadorSimbolo retira(ApontadorSimbolo topo, char* identificador) {
+	return busca(identificador, topo);
 }
 
 // Busca simbolo na tabela
@@ -111,7 +106,9 @@ void imprimeSimbolo(ApontadorSimbolo a){
 		printf("%18s", "PARAMETRO FORMAL |");
 	} else if(a->categoria == OPT_Procedimento){
 		printf("%18s", "PROCEDIMENTO |");
-	}	
+	} else if(a->categoria == OPT_Rotulo){
+		printf("%18s", "ROTULO |");
+	}
 	// ROTULO (APENAS PARA FUNCAO E PROCEDIMENTO)
 	if(a->categoria == OPT_Procedimento){
 		printf("%6s", a->rotulo);
