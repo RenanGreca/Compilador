@@ -112,6 +112,8 @@ void imprimeSimbolo(ApontadorSimbolo a){
 	// ROTULO (APENAS PARA FUNCAO E PROCEDIMENTO)
 	if(a->categoria == OPT_Procedimento){
 		printf("%6s", a->rotulo);
+	} else if(a->categoria == OPT_Rotulo){
+		printf("%6s", a->rotulo);
 	} else {
 		printf("%6s", "");
 	}

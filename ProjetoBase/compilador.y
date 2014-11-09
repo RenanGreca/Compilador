@@ -121,7 +121,7 @@ programa:   {
 bloco:      parte_declaracao 
             {
                 imprime(tabelaSimbolo);
-                
+
                 // Empilha rótulo de entrada do procedimento
                 int *i = malloc(sizeof(int));
                 *i = rotulo;
@@ -208,10 +208,11 @@ declara_label: NUMERO {
                     a.deslocamento = 0;
                     a.nivel = nivel;
 
-                    char inpr[10];
                     imprimeRotulo(proxRotulo(), s_rotulo);
                     a.rotulo = malloc(sizeof(s_rotulo));
                     strcpy(a.rotulo, s_rotulo);
+
+                    printf("Rotulo: %s ", a.rotulo);
 
                     /* insere vars na tabela de símbolos */
                     tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Rotulo);
