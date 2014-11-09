@@ -45,11 +45,12 @@ int prevRotulo(){
 
 void imprimeRotulo(int this_rotulo, char* s_rotulo){
     //char s_rotulo[10];
+    //sprintf(s_rotulo, "R%2d", this_rotulo);
     if (this_rotulo < 10) {
         sprintf(s_rotulo, "R0%d", this_rotulo);
     } else {
         sprintf(s_rotulo, "R%d", this_rotulo);
-    }
+    }   
     //return s_rotulo;
     //geraCodigo (s_rotulo, "NADA");
 }
@@ -82,7 +83,7 @@ int verificaTipos(char *op) {
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
 %token MENOR_IGUAL MAIOR_IGUAL
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
-%token PROCEDURE FUNCTION LABEL
+%token PROCEDURE FUNCTION LABEL GOTO
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -119,6 +120,8 @@ programa:   {
 
 bloco:      parte_declaracao 
             {
+                imprime(tabelaSimbolo);
+                
                 // Empilha rótulo de entrada do procedimento
                 int *i = malloc(sizeof(int));
                 *i = rotulo;
@@ -204,6 +207,12 @@ declara_label: NUMERO {
                     strcpy(a.identificador, token);
                     a.deslocamento = 0;
                     a.nivel = nivel;
+
+                    char inpr[10];
+                    imprimeRotulo(proxRotulo(), s_rotulo);
+                    a.rotulo = malloc(sizeof(s_rotulo));
+                    strcpy(a.rotulo, s_rotulo);
+
                     /* insere vars na tabela de símbolos */
                     tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Rotulo);
                 }
@@ -270,17 +279,33 @@ comandos_ : comandos
           |
 ;
 
-comandos :  comandos comando PONTO_E_VIRGULA
-          | comando PONTO_E_VIRGULA 
+comandos :  comandos comando PONTO_E_VIRGULA {
+            printf("Fim comando.\n");
+          }
+          | comandos NUMERO DOIS_PONTOS {
+            printf("ENTRANDO EM ROTULO\n");
+            char enrt[10];
+            sprintf(enrt, "ENRT %d, 0", nivel);
+            geraCodigo(NULL, enrt);
+          } comando PONTO_E_VIRGULA
+          | comando PONTO_E_VIRGULA {
+            printf("Fim comando.\n");
+          }
+          | NUMERO DOIS_PONTOS {
+            printf("ENTRANDO EM ROTULO\n");
+            char enrt[10];
+            sprintf(enrt, "ENRT %d, 0", nivel);
+            geraCodigo(NULL, enrt);
+          } comando PONTO_E_VIRGULA
 ;
 
-comando :   NUMERO DOIS_PONTOS
-          | comando_composto
+comando :   comando_composto
           | proc_atribuicao
           | write
           | while
           | read
           | if
+          | goto
 ;
 
 /* COMANDO: IF */
@@ -340,6 +365,12 @@ while:      {
                 geraCodigo(NULL, dsvs); // rotulo de volta ao loop
                 geraCodigo(temp, "NADA"); // rotulo de saida do loop
             }
+;
+
+/* COMANDO: GOTO */
+goto:   GOTO ABRE_PARENTESES NUMERO {
+
+        } FECHA_PARENTESES
 ;
 
 /* COMANDO: PROCEDURE */

@@ -6,15 +6,15 @@ program proc2(input, output);
         var z:integer;
         begin
             if (t>1)
-                then
-                        p:=1
-                else
+            then
+                p:=1
+            else
                 y:=1;
             z:=y;
-            y:=z*t;
+            1213:y:=z*t;
         end;
     begin
-        read(x);
+    1234:read(x);
         p(x);
         write(x,y);
     end.
