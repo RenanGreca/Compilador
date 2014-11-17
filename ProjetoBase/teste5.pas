@@ -17,4 +17,5 @@ program proc2(input, output);
     1234:read(x);
         p(x);
         write(x,y);
+        goto(1234);
     end.

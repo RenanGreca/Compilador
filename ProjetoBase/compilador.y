@@ -370,7 +370,21 @@ while:      {
 
 /* COMANDO: GOTO */
 goto:   GOTO ABRE_PARENTESES NUMERO {
-
+                if(_DEBUG) { printf("..............................[Goto] para o rotulo: %s\n", token); }
+                
+                // Procura rotulo na tabela de simbolos
+                ApontadorSimbolo thisRotulo = busca(token, tabelaSimbolo);
+                if(thisRotulo != NULL) {
+                        if(_DEBUG) { printf("..............................[Rotulo %s] encontrado.\n", token); }
+                        
+                        // Se o rotulo é visivel, chama DSVR
+                        char dsvr[50];
+                        sprintf(dsvr, "DSVR %s", token);
+                        geraCodigo(NULL, dsvr);
+                } else {
+                        printf("Rotulo %s não foi declarado!\n", token);
+                        return 1;
+                }
         } FECHA_PARENTESES
 ;
 
