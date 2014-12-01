@@ -16,7 +16,7 @@
 
 #define _DEBUG 1
 
-int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0, num_argumentos = 0;
+int num_vars, *temp_num, deslocamento = 0, nivel = 0, rotulo = 0, num_argumentos = 0, num_vars_proc = 0;
 int bufferVetorTipo[100], bufferVetorPassagem[100];
 int paramtipo = PARAMTIPO_VALOR;
 int is_expr = 0;
@@ -98,17 +98,7 @@ programa:   {
             }
             PROGRAM IDENT
             {
-                Simbolo a;
-                a.identificador = malloc(sizeof(token));
-                a.nivel = nivel;
-                a.deslocamento = deslocamento++;
-                strcpy(a.identificador, token);
-                // Adiciona o nome do programa na tabela de simbolos
-                tabelaSimbolo = insere(a, tabelaSimbolo, OPT_ParametroFormal);
-                setaTipo(tabelaSimbolo, 1, VARTIPO_STRING);
                 num_vars = 0;
-                // AMEM para o nome do programa
-                geraCodigo (NULL, "AMEM 1");
             }
             ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA 
             bloco PONTO
@@ -118,7 +108,10 @@ programa:   {
             }
 ;
 
-bloco:      parte_declaracao 
+bloco:      {
+				num_vars_proc = 0;
+			}
+			parte_declaracao 
             {
                 imprime(tabelaSimbolo);
 
@@ -129,7 +122,8 @@ bloco:      parte_declaracao
 
                 // Empilha número de vars do procedimento
                 int *j = malloc(sizeof(int));
-                *j = num_vars;
+                *j = num_vars_proc;
+                printf("Empilhando %d in %p\n", num_vars_proc, j);
                 empilha(&pilha_amem_dmem, j);
 
                 char dsvs[10];
@@ -148,9 +142,10 @@ bloco:      parte_declaracao
             }
             comando_composto 
             {
-                num_vars = *(int *)desempilha(&pilha_amem_dmem);    
+                num_vars_proc = *(int *)desempilha(&pilha_amem_dmem);
+                printf("Desempilhando %d\n", num_vars_proc);    
                 char dmem[10];
-                sprintf(dmem, "DMEM %d", num_vars);
+                sprintf(dmem, "DMEM %d", num_vars_proc);
                 geraCodigo(NULL, dmem);
             }
 ;
@@ -188,6 +183,8 @@ declara_var:
                 sprintf(amem, "AMEM %d", num_vars);
                 //printf("%s\n", amem);
                 geraCodigo (NULL, amem);
+
+                num_vars_proc += num_vars;
             }
             PONTO_E_VIRGULA
 ;
@@ -529,7 +526,7 @@ proc_sem_arg:
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 a.rotulo = malloc(sizeof(s_rotulo));
                 strcpy(a.rotulo, s_rotulo);
-                sprintf(inpr, "INPR %d", nivel);
+                sprintf(inpr, "ENPR %d", nivel);
                 geraCodigo(s_rotulo, inpr);
 
                 simboloBuffer = a;
@@ -628,7 +625,7 @@ func_sem_arg:
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 a.rotulo = malloc(sizeof(s_rotulo));
                 strcpy(a.rotulo, s_rotulo);
-                sprintf(inpr, "INPR %d", nivel);
+                sprintf(inpr, "ENPR %d", nivel);
                 geraCodigo(s_rotulo, inpr);
 
                 simboloBuffer = a;
@@ -672,9 +669,11 @@ lista_vals_write:
 
 /* COMANDO: READ */
 
-read:       READ ABRE_PARENTESES IDENT 
-            {
-                ApontadorSimbolo a = busca(token, tabelaSimbolo);
+lista_vals_read: elemento_vals_read VIRGULA lista_vals_read | elemento_vals_read
+;
+
+elemento_vals_read: IDENT {
+				ApontadorSimbolo a = busca(token, tabelaSimbolo);
                 if(a != NULL) {
                     char armz[10];
                     sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
@@ -685,7 +684,9 @@ read:       READ ABRE_PARENTESES IDENT
                     Erro(erro);
                     return 1;
                 }
-            }
+}
+
+read:       READ ABRE_PARENTESES lista_vals_read
             FECHA_PARENTESES
 ;
 
@@ -749,6 +750,7 @@ chama_proc:   chama_proc_sem_arg  {
               printf("..............................[Numero IINcorreto de argumentos]\n");
               return 1;
             }
+            strcpy(nome_proc, "");
           }
   |   chama_proc_sem_arg  {
             printf("..............................[Procedimento com parametros]\n");
@@ -758,7 +760,7 @@ chama_proc:   chama_proc_sem_arg  {
     lista_vals_chama_proc {
             nome_proc[0] = 0;
             if(_DEBUG){ printf("..............................[Numero de argumentos] %d\n", num_argumentos); }
-            ApontadorSimbolo a = busca(simboloBuffer.identificador, tabelaSimbolo);
+            ApontadorSimbolo a = busca(procedimentoBuffer->identificador, tabelaSimbolo);
             if(a != NULL) {
               if(a->n_args == num_argumentos) {
                 printf("..............................[Numero correto de argumentos]\n");
@@ -770,7 +772,7 @@ chama_proc:   chama_proc_sem_arg  {
                 return 1;
               }
             } else {
-                sprintf(erro, "Procedimento '%s' nao foi declarada!", token);
+                sprintf(erro, "Procedimento '%s' nao foi declarada!", simboloBuffer.identificador);
                 Erro(erro);
                 return 1;
             }
@@ -935,9 +937,9 @@ ident      : IDENT
                                 printf("O parametro %s nao e o tipo esperado.\n", token);
                                 return 1;
                             }
-                        } else {
-                            empilhaTipo(&pilha_tipos, tipo_tmp);
                         }
+                        
+                        empilhaTipo(&pilha_tipos, tipo_tmp);
                         
                         //printf("CHAMADA PROC - ARG: %s NUM_ARGUMENTOS : %d PASSAGEM: %d\n", a->identificador, num_argumentos, a->passagem);
                         if(a->categoria == OPT_variavelSimples) {
