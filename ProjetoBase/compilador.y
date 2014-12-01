@@ -81,7 +81,7 @@ int verificaTipos(char *op) {
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO NUMERO
 %token WRITE MAIS MENOS ASTERISCO DIV AND OR
 %token WHILE READ IGUAL DIFERENTE MAIOR MENOR
-%token MENOR_IGUAL MAIOR_IGUAL
+%token MENOR_IGUAL MAIOR_IGUAL DO
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
 %token PROCEDURE FUNCTION LABEL GOTO
 
@@ -280,16 +280,16 @@ comandos_ : comandos
           |
 ;
 
-comandos :  comandos comando PONTO_E_VIRGULA {
+comandos :  comandos PONTO_E_VIRGULA comando {
             printf("Fim comando.\n");
           }
-          | comandos NUMERO DOIS_PONTOS {
+          | comandos PONTO_E_VIRGULA NUMERO DOIS_PONTOS {
             printf("ENTRANDO EM ROTULO\n");
             char enrt[10];
             sprintf(enrt, "ENRT %d, 0", nivel);
             geraCodigo(NULL, enrt);
-          } comando PONTO_E_VIRGULA
-          | comando PONTO_E_VIRGULA {
+          } comando
+          | comando {
             printf("Fim comando.\n");
           }
           | NUMERO DOIS_PONTOS {
@@ -297,7 +297,7 @@ comandos :  comandos comando PONTO_E_VIRGULA {
             char enrt[10];
             sprintf(enrt, "ENRT %d, 0", nivel);
             geraCodigo(NULL, enrt);
-          } comando PONTO_E_VIRGULA
+          } comando
 ;
 
 comando :   comando_composto
@@ -333,7 +333,7 @@ if:         if_simples
             }
 ;
 
-if_simples: IF ABRE_PARENTESES boolexpr FECHA_PARENTESES
+if_simples: IF parexpr
             {
                 char dsvf[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
@@ -349,14 +349,14 @@ while:      {
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
             }
-            WHILE ABRE_PARENTESES boolexpr FECHA_PARENTESES
+            WHILE parexpr
             {
                 char dsvf[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 sprintf(dsvf, "DSVF %s", s_rotulo);
                 geraCodigo(NULL, dsvf);
             }
-            comando
+            DO comando
             {
                 char temp[10];
                 imprimeRotulo(rotulo-1, temp);
@@ -677,7 +677,7 @@ read:       READ ABRE_PARENTESES IDENT
                 ApontadorSimbolo a = busca(token, tabelaSimbolo);
                 if(a != NULL) {
                     char armz[10];
-                    sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+                    sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
                     geraCodigo(NULL, "LEIT");
                     geraCodigo(NULL, armz);
                 } else {
@@ -721,7 +721,7 @@ atribuicao: ATRIBUICAO expr
                         printf("Tipo errado!\n");
                         return 1;
                     }
-                    sprintf(armz, "ARMZ %d,%d", a->nivel, a->deslocamento);
+                    sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
                     geraCodigo(NULL, armz);
                 } else {
                     sprintf(erro, "Variavel '%s' nao foi declarada!", temp);
@@ -794,6 +794,10 @@ chama_proc_sem_arg: {
                     return 1;
                 }
             }
+;
+
+parexpr: ABRE_PARENTESES boolexpr FECHA_PARENTESES
+        | boolexpr
 ;
 
 boolexpr:   expr
@@ -939,32 +943,32 @@ ident      : IDENT
                         if(a->categoria == OPT_variavelSimples) {
                             if(tipo_passagem_b == PARAMTIPO_VALOR) {
                                 char crvl[10];
-                                sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                sprintf(crvl, "CRVL %d, %d", a->nivel, a->deslocamento);
                                 geraCodigo(NULL, crvl);
                             } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
                                 char crvl[10];
-                                sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                sprintf(crvl, "CREN %d, %d", a->nivel, a->deslocamento);
                                 geraCodigo(NULL, crvl);
                             }
                         } else if(a->categoria == OPT_ParametroFormal) {
                             if(a->passagem == PARAMTIPO_VALOR) {
                                 if(tipo_passagem_b == PARAMTIPO_VALOR) {
                                     char crvl[10];
-                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    sprintf(crvl, "CRVL %d, %d", a->nivel, a->deslocamento);
                                     geraCodigo(NULL, crvl);
                                 } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
                                     char crvl[10];
-                                    sprintf(crvl, "CREN %d,%d", a->nivel, a->deslocamento);
+                                    sprintf(crvl, "CREN %d, %d", a->nivel, a->deslocamento);
                                     geraCodigo(NULL, crvl);
                                 }
                             } else if(a->passagem == PARAMTIPO_REFER) {
                                 if(tipo_passagem_b == PARAMTIPO_VALOR) {
                                     char crvl[10];
-                                    sprintf(crvl, "CRVI %d,%d", a->nivel, a->deslocamento);
+                                    sprintf(crvl, "CRVI %d, %d", a->nivel, a->deslocamento);
                                     geraCodigo(NULL, crvl);
                                 } else if(b->passagemParam[num_argumentos] == PARAMTIPO_REFER) {
                                     char crvl[10];
-                                    sprintf(crvl, "CRVL %d,%d", a->nivel, a->deslocamento);
+                                    sprintf(crvl, "CRVL %d, %d", a->nivel, a->deslocamento);
                                     geraCodigo(NULL, crvl);
                                 }
 

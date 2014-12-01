@@ -100,6 +100,11 @@ while {simbolo = simb_while;
           IMPRIME("while ");
           return WHILE;}
 
+do {simbolo = simb_do;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("do ");
+          return DO;}
+
 goto {simbolo = simb_goto;
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("goto ");
