@@ -226,19 +226,20 @@ function {simbolo = simb_func;
 		return NUMERO;
 	}
 
+\+    { IMPRIME(" mais  ");
+          return MAIS; }
+\-    { return MENOS; }
+\*    { return ASTERISCO;  }
+\/    { return DIV; }
+div   { return DIV;  }
+and   { return AND; }
+or    { return OR; }
+
 {ident} { simbolo = simb_identificador; 
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" ident  ");
           return IDENT;
         }
-
-\+    { IMPRIME(" mais  ");
-          return MAIS; }
-\-    { return MENOS; }
-\*    { return ASTERISCO;  }
-\/    { return DIV;  }
-and   { return AND; }
-or    { return OR; }
 
 %%
 
