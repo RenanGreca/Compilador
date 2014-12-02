@@ -142,11 +142,14 @@ bloco:      {
             }
             comando_composto 
             {
-                num_vars_proc = *(int *)desempilha(&pilha_amem_dmem);
-                printf("Desempilhando %d\n", num_vars_proc);    
-                char dmem[10];
-                sprintf(dmem, "DMEM %d", num_vars_proc);
-                geraCodigo(NULL, dmem);
+                num_vars_proc = *(int *)desempilha(&pilha_amem_dmem);   
+                if (num_vars_proc != 0) {
+                    printf("Desempilhando %d\n", num_vars_proc);
+                    char dmem[10];
+                    sprintf(dmem, "DMEM %d", num_vars_proc);
+                    geraCodigo(NULL, dmem);
+                }
+
             }
 ;
 
@@ -213,6 +216,7 @@ declara_label: NUMERO {
 
                     /* insere vars na tabela de símbolos */
                     tabelaSimbolo = insere(a, tabelaSimbolo, OPT_Rotulo);
+                    imprime(tabelaSimbolo);
                 }
 ;
 
@@ -283,7 +287,9 @@ comandos :  comandos PONTO_E_VIRGULA comando {
           | comandos PONTO_E_VIRGULA NUMERO DOIS_PONTOS {
             printf("ENTRANDO EM ROTULO\n");
             char enrt[10];
-            sprintf(enrt, "ENRT %d, 0", nivel);
+            int *num_vars_proc = (int *)desempilha(&pilha_amem_dmem);
+            sprintf(enrt, "ENRT %d, %d", nivel, *num_vars_proc);
+            empilha(&pilha_amem_dmem, num_vars_proc);
             geraCodigo(NULL, enrt);
           } comando
           | comando {
@@ -292,7 +298,9 @@ comandos :  comandos PONTO_E_VIRGULA comando {
           | NUMERO DOIS_PONTOS {
             printf("ENTRANDO EM ROTULO\n");
             char enrt[10];
-            sprintf(enrt, "ENRT %d, 0", nivel);
+            int *num_vars_proc = (int *)desempilha(&pilha_amem_dmem);
+            sprintf(enrt, "ENRT %d, %d", nivel, *num_vars_proc);
+            empilha(&pilha_amem_dmem, num_vars_proc);
             geraCodigo(NULL, enrt);
           } comando
 ;
@@ -312,20 +320,27 @@ if:         if_simples
             ELSE 
             {
                 char dsvs[10];
-                imprimeRotulo(proxRotulo(), s_rotulo);
+                int *i = desempilha(&pilha_rot);
+                imprimeRotulo(*i, s_rotulo);
                 sprintf(dsvs, "DSVS %s", s_rotulo);
                 geraCodigo(NULL, dsvs);
-                imprimeRotulo(rotulo-2, s_rotulo);
+
+                // Empilha rótulo de desvio do then
+                empilha(&pilha_rot, i);
+                
+                imprimeRotulo(*i-1, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
             }
             comando
             {
-                imprimeRotulo(rotulo-1, s_rotulo);
+                int *i = desempilha(&pilha_rot);
+                imprimeRotulo(*i, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
             }
           | if_simples
             {
-                imprimeRotulo(rotulo-1, s_rotulo);
+                int *i = desempilha(&pilha_rot);
+                imprimeRotulo(*i-1, s_rotulo);
                 geraCodigo(s_rotulo, "NADA");
             }
 ;
@@ -336,6 +351,13 @@ if_simples: IF parexpr
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 sprintf(dsvf, "DSVF %s", s_rotulo);
                 geraCodigo(NULL, dsvf);
+
+                // Empilha rótulo de desvio do if
+                int *i = malloc(sizeof(int));
+                *i = rotulo;
+                empilha(&pilha_rot, i);
+                
+                proxRotulo();
             }
             THEN comando
 ;
@@ -366,7 +388,7 @@ while:      {
 ;
 
 /* COMANDO: GOTO */
-goto:   GOTO ABRE_PARENTESES NUMERO {
+goto:   GOTO NUMERO {
                 if(_DEBUG) { printf("..............................[Goto] para o rotulo: %s\n", token); }
                 
                 // Procura rotulo na tabela de simbolos
@@ -376,13 +398,13 @@ goto:   GOTO ABRE_PARENTESES NUMERO {
                         
                         // Se o rotulo é visivel, chama DSVR
                         char dsvr[50];
-                        sprintf(dsvr, "DSVR %s", token);
+                        sprintf(dsvr, "DSVR %s, %d, %d", thisRotulo->rotulo, thisRotulo->nivel, nivel);
                         geraCodigo(NULL, dsvr);
                 } else {
                         printf("Rotulo %s não foi declarado!\n", token);
                         return 1;
                 }
-        } FECHA_PARENTESES
+        }
 ;
 
 /* COMANDO: PROCEDURE */
@@ -495,11 +517,14 @@ proc: proc_sem_arg { printf("..............................[Criando procedimento
   FECHA_PARENTESES
   PONTO_E_VIRGULA
   bloco {
-    char rtpr[10];
-    sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
-    geraCodigo(NULL, rtpr);
     char* nome_proc_pilha;
     nome_proc_pilha = desempilha(&pilha_proc);
+    
+    ApontadorSimbolo a = busca(nome_proc_pilha, tabelaSimbolo);
+    char rtpr[10];
+    sprintf(rtpr, "RTPR %d, %d", nivel, a->n_args);
+    geraCodigo(NULL, rtpr);
+    
     printf("..............................Desempilhando procedimento %s\n", nome_proc_pilha);
     tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
   }
@@ -565,11 +590,14 @@ func: func_sem_arg { printf("..............................[Criando funcao sem a
   FECHA_PARENTESES DOIS_PONTOS tipo_func
   PONTO_E_VIRGULA
   bloco {
-    char rtpr[10];
-    sprintf(rtpr, "RTPR %d, %d", nivel, num_argumentos);
-    geraCodigo(NULL, rtpr);
     char* nome_proc_pilha;
     nome_proc_pilha = desempilha(&pilha_proc);
+    
+    ApontadorSimbolo a = busca(nome_proc_pilha, tabelaSimbolo);
+    char rtpr[10];
+    sprintf(rtpr, "RTPR %d, %d", nivel, a->n_args);
+    geraCodigo(NULL, rtpr);
+    
     printf("..............................Desempilhando funcao %s\n", nome_proc_pilha);
     tabelaSimbolo = retira(tabelaSimbolo, nome_proc_pilha);
   }
@@ -676,9 +704,18 @@ elemento_vals_read: IDENT {
 				ApontadorSimbolo a = busca(token, tabelaSimbolo);
                 if(a != NULL) {
                     char armz[10];
-                    sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
                     geraCodigo(NULL, "LEIT");
-                    geraCodigo(NULL, armz);
+                    
+                    if((a->passagem == PARAMTIPO_VALOR) ||
+                       (a->categoria == OPT_variavelSimples) ||
+                       (a->categoria == OPT_Procedimento)) {
+                        sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
+                        geraCodigo(NULL, armz);
+                    } else if(a->passagem == PARAMTIPO_REFER) {
+                        sprintf(armz, "ARMI %d, %d", a->nivel, a->deslocamento);
+                        geraCodigo(NULL, armz);
+                    }
+
                 } else {
                     sprintf(erro, "Variavel '%s' nao foi declarada!", token);
                     Erro(erro);
@@ -722,8 +759,10 @@ atribuicao: ATRIBUICAO expr
                         printf("Tipo errado!\n");
                         return 1;
                     }
-                    
-                    if(a->passagem == PARAMTIPO_VALOR) {
+                
+                    if((a->passagem == PARAMTIPO_VALOR) ||
+                       (a->categoria == OPT_variavelSimples) ||
+                       (a->categoria == OPT_Procedimento)) {
                         sprintf(armz, "ARMZ %d, %d", a->nivel, a->deslocamento);
                         geraCodigo(NULL, armz);
                     } else if(a->passagem == PARAMTIPO_REFER) {
