@@ -1,0 +1,49 @@
+program     # program 
+ ident      # exemploErro2 
+ abre_parenteses      # ( 
+ ident      # input 
+ virgula      # , 
+ ident      # output 
+ fecha_parenteses     # ) 
+ pt_virgula      # ; 
+var      # var 
+ ident      # n 
+ virgula      # , 
+ ident      # k 
+ dois pontos     # : 
+Integer    # integer 
+...................n_posicoes: 2 tipo: 0
+..............................[Aloca memoria] 2 variaveis
+ pt_virgula      # ; 
+begin     # begin 
+....................|-------------- TABELA ----------------------------------------------------------------------------------------------------#
+....................|                           NOME    | NIVEL LEXICO   | DESLOCAMENTO   |      TIPO   |   CATEGORIA     | ROTULO  | N_ARGS  | ARG_LIST#
+....................|--------------------------------------------------------------------------------------------------------------------------#
+....................|                                 k |              0 |              1 |         Int |VARIAVEL SIMPLES |         |         |   |
+....................|                                 n |              0 |              0 |         Int |VARIAVEL SIMPLES |         |         |   |
+....................|-------------- FINISH ----------------------------------------------------------------------------------------------------#
+Empilhando 2 in 0xe84610
+read     # read 
+ abre_parenteses      # ( 
+ ident      # n 
+ fecha_parenteses     # ) 
+Fim comando.
+ pt_virgula      # ; 
+read     # read 
+ abre_parenteses      # ( 
+ ident      # k 
+ fecha_parenteses     # ) 
+Fim comando.
+ pt_virgula      # ; 
+if     # if 
+ abre_parenteses      # ( 
+ ident      # n 
+..............................[Empilhando] n (tipo: 0) 
+nome_proc: 
+ mais      # n 
+ numero    # 1 
+..............................[Empilhando] CONSTANTE (tipo: 0)
+ fecha_parenteses     # ) 
+..............................[Desempilhando (expr: ADICAO)]...0...0...
+then     # then 
+Tipo da expressao deve ser boolean!

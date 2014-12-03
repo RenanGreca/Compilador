@@ -18,5 +18,5 @@ begin
 	else
 		write(j);
 
-	p(1,i,1);
+	p(i+1,i,1);
 end.

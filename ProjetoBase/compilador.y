@@ -74,6 +74,21 @@ int verificaTipos(char *op) {
     return 1;
 }
 
+int verificaTiposBool(char *op) {
+    int *a, *b;
+    if(_DEBUG){ printf("..............................[Desempilhando (expr: %s)]...", op); }
+    a = desempilha(&pilha_tipos);
+    if(_DEBUG){ printf("%d...", *a); }
+    b = desempilha(&pilha_tipos);
+    if(_DEBUG){ printf("%d...\n", *b); }  
+    if(*a != *b){
+        printf("%s com tipos diferentes!\n", op);
+        return 0;
+    }
+    empilhaTipo(&pilha_tipos, VARTIPO_BOOLEAN);
+    return 1;
+}
+
 %}
 
 %token PROGRAM ABRE_PARENTESES FECHA_PARENTESES 
@@ -84,6 +99,7 @@ int verificaTipos(char *op) {
 %token MENOR_IGUAL MAIOR_IGUAL DO
 %token INTEGER CHAR STRING BOOLEAN IF ELSE THEN
 %token PROCEDURE FUNCTION LABEL GOTO
+%token TRUE FALSE
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -347,6 +363,12 @@ if:         if_simples
 
 if_simples: IF parexpr
             {
+                int *tipo = desempilha(&pilha_tipos);
+                if (*tipo != VARTIPO_BOOLEAN) {
+                    printf("Tipo da expressao deve ser boolean!\n");
+                    return 1;
+                }
+            
                 char dsvf[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 sprintf(dsvf, "DSVF %s", s_rotulo);
@@ -370,6 +392,12 @@ while:      {
             }
             WHILE parexpr
             {
+                int *tipo = desempilha(&pilha_tipos);
+                if (*tipo != VARTIPO_BOOLEAN) {
+                    printf("Tipo da expressao deve ser boolean!\n");
+                    return 1;
+                }
+                
                 char dsvf[10];
                 imprimeRotulo(proxRotulo(), s_rotulo);
                 sprintf(dsvf, "DSVF %s", s_rotulo);
@@ -741,7 +769,7 @@ proc_ou_atrib:  atribuicao
           | { strcpy(nome_proc, temp); }chama_proc
 ;
 
-atribuicao: ATRIBUICAO expr
+atribuicao: ATRIBUICAO boolexpr
             {
                 //ARMZ
                 char armz[10];
@@ -751,7 +779,7 @@ atribuicao: ATRIBUICAO expr
                     if(_DEBUG){
                         printf("..............................[TESTE FINAL EXPR] VARIAVEL %s (tipo: %d) recebe valor de expressao.\n", a->identificador, a->tipo);
                         printf("..............................Desempilhando tipo da expressao...");
-                    }
+                    }                  
                     valor_pilha = desempilha(&pilha_tipos);
                     if(_DEBUG){ printf("%d...\n", *valor_pilha); }
                     // Checa valor da pilha de valores
@@ -779,9 +807,31 @@ atribuicao: ATRIBUICAO expr
 
 /* COMANDO: CHAMADA DE PROCEDIMENTO */
 
-lista_vals_chama_proc:  expr { num_argumentos++; is_expr = 0; } VIRGULA lista_vals_chama_proc
-    | expr { num_argumentos++; is_expr = 0; }
-    |
+lista_vals_chama_proc:  boolexpr {
+                            ApontadorSimbolo b = busca(nome_proc, tabelaSimbolo);
+                            if (b != NULL) {
+                                printf("Procedimento %s\n", b->identificador);
+                                if(b->tiposParam[num_argumentos] != *(int*)desempilha(&pilha_tipos)) {
+                                    printf("O parametro %s nao e o tipo esperado.\n", token);
+                                    return 1;
+                                }
+                            }
+                            num_argumentos++;
+                            is_expr = 0;
+                        } VIRGULA lista_vals_chama_proc
+                    |   boolexpr {
+                            ApontadorSimbolo b = busca(nome_proc, tabelaSimbolo);
+                            if (b != NULL) {
+                                printf("Procedimento %s\n", b->identificador);
+                                if(b->tiposParam[num_argumentos] != *(int*)desempilha(&pilha_tipos)) {
+                                    printf("O parametro %s nao e o tipo esperado.\n", token);
+                                    return 1;
+                                }
+                            }
+                            num_argumentos++;
+                            is_expr = 0;
+                        }
+                    |
 ;
 
 chama_proc:   chama_proc_sem_arg  {
@@ -847,50 +897,49 @@ parexpr: ABRE_PARENTESES boolexpr FECHA_PARENTESES
         | boolexpr
 ;
 
-boolexpr:   expr
-          | expr IGUAL expr
-            {
-        if (verificaTipos("IGUAL")) {
-                                  geraCodigo(NULL, "CMIG");
-        } else {
-          return 1;       
-        }
-                        } |
-                expr DIFERENTE expr {
-        if (verificaTipos("DIFERENTE")) {
-                                  geraCodigo(NULL, "CMDG");
-        } else {
-          return 1;       
-        }
-                        } | 
-                expr MENOR expr {
-        if (verificaTipos("MENOR")) {
-                                  geraCodigo(NULL, "CMME");
-        } else {
-          return 1;       
-        }
-                        } | 
-                expr MAIOR expr {
-        if (verificaTipos("MAIOR")) {
-                                  geraCodigo(NULL, "CMMA");
-        } else {
-          return 1;       
-        }
-                        } | 
-                expr MENOR_IGUAL expr {
-        if (verificaTipos("MENOR_IGUAL")) {
-                                  geraCodigo(NULL, "CMEG");
-        } else {
-          return 1;       
-        }
-                        } | 
-                expr MAIOR_IGUAL expr {
-        if (verificaTipos("MAIOR_IGUAL")) {
-                                  geraCodigo(NULL, "CMAG");
-        } else {
-          return 1;       
-        }
-                        }
+boolexpr:  expr |
+           expr IGUAL expr  {
+            if (verificaTiposBool("IGUAL")) {
+                                      geraCodigo(NULL, "CMIG");
+            } else {
+              return 1;       
+            }
+           } |
+           expr DIFERENTE expr {
+            if (verificaTiposBool("DIFERENTE")) {
+                                      geraCodigo(NULL, "CMDG");
+            } else {
+              return 1;       
+            }
+           } | 
+           expr MENOR expr {
+            if (verificaTiposBool("MENOR")) {
+                                      geraCodigo(NULL, "CMME");
+            } else {
+              return 1;       
+            }
+           } | 
+           expr MAIOR expr {
+            if (verificaTiposBool("MAIOR")) {
+                                      geraCodigo(NULL, "CMMA");
+            } else {
+              return 1;       
+            }
+           } | 
+           expr MENOR_IGUAL expr {
+            if (verificaTiposBool("MENOR_IGUAL")) {
+                                      geraCodigo(NULL, "CMEG");
+            } else {
+              return 1;       
+            }
+           } | 
+           expr MAIOR_IGUAL expr {
+            if (verificaTiposBool("MAIOR_IGUAL")) {
+                                      geraCodigo(NULL, "CMAG");
+            } else {
+              return 1;       
+            }
+           }
 ;
 
 expr       :    expr MAIS { is_expr = 1; } termo 
@@ -959,7 +1008,7 @@ and        : and AND bool { printf ("and"); } |
 val     : ABRE_PARENTESES expr FECHA_PARENTESES
         | ident
         | numero
-        
+        | bool
 ;
 
 ident   : ident_final
@@ -989,8 +1038,11 @@ ident   : ident_final
             }
             num_argumentos = 0;
             strcpy(nome_proc, "");
+            empilhaTipo(&pilha_tipos, a->tipo);
         }
-        FECHA_PARENTESES {  }
+        FECHA_PARENTESES {
+
+        }
 ;
 
 ident_final   :   IDENT
@@ -1023,10 +1075,10 @@ ident_final   :   IDENT
                                 printf("Impossivel passar expr por refer na chamada de procedimento %s\n", nome_proc);
                                 return 1;
                             }
-                            if(b->tiposParam[num_argumentos] != a->tipo) {
+                            /*if(b->tiposParam[num_argumentos] != a->tipo) {
                                 printf("O parametro %s nao e o tipo esperado.\n", token);
                                 return 1;
-                            }
+                            }*/
                         }
                         
                         empilhaTipo(&pilha_tipos, tipo_tmp);
@@ -1075,16 +1127,36 @@ ident_final   :   IDENT
 ;
 
 numero     : NUMERO {
-      // Empilha na pilha de tipos
-      if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 0)\n"); }
-      int i;
-      i = VARTIPO_INT;  
-      empilhaTipo(&pilha_tipos, i);
-                        
-      char crct[10];
-                        sprintf(crct, "CRCT %s", token);
-                        geraCodigo(NULL, crct);
-                }
+                // Empilha na pilha de tipos
+                if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 0)\n"); }
+                int i;
+                i = VARTIPO_INT;  
+                empilhaTipo(&pilha_tipos, i);
+                                
+                char crct[10];
+                sprintf(crct, "CRCT %s", token);
+                geraCodigo(NULL, crct);
+            }
+                
+bool        : TRUE {
+                // Empilha na pilha de tipos
+                if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 3)\n"); }
+                int i;
+                i = VARTIPO_BOOLEAN;  
+                empilhaTipo(&pilha_tipos, i);
+                
+                geraCodigo(NULL, "CRCT 1");
+            }
+            | FALSE {
+                // Empilha na pilha de tipos
+                if(_DEBUG){ printf("..............................[Empilhando] CONSTANTE (tipo: 3)\n"); }
+                int i;
+                i = VARTIPO_BOOLEAN;  
+                empilhaTipo(&pilha_tipos, i);
+                
+                geraCodigo(NULL, "CRCT 0");
+            }
+;
 
 %%
 

@@ -22,7 +22,7 @@ ident [a-zA-Z][a-zA-Z1-9]*
 
 numero [0-9]+
 
-comentario "(*"(.|{pulo_linha})*"*)"
+comentario "(*".*"*)"
 
 %%
 
@@ -219,6 +219,20 @@ function {simbolo = simb_func;
       IMPRIME(" menor ou igual ");
       return MENOR_IGUAL;
      }
+    
+true { 
+        simbolo = simb_true;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME(" true ");
+        return TRUE;
+        }
+        
+false { 
+        simbolo = simb_true;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME(" false ");
+        return FALSE;
+        }
 
 {numero} { simbolo = simb_numero;
 		strncpy (token, yytext, TAM_TOKEN);
